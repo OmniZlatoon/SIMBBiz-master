@@ -1,4 +1,5 @@
 const express = require('express')
+const { auth, admin } = require('./firebase/initializeFirebase')
 const mongoose = require('mongoose')
 const cors = require('cors')
 const bodyParser = require('body-parser')
@@ -10,6 +11,7 @@ const routes = require('./routes/itemRoutes')
 const setupSwagger = require('./swagger')
 const config = require('./config')
 const logger = require('./utils/logger')
+
 
 const apiRoutes = require('./routes/index')
 
