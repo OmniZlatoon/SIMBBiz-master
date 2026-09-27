@@ -11,6 +11,7 @@ const routes = require('./routes/itemRoutes')
 const setupSwagger = require('./swagger')
 const config = require('./config')
 const logger = require('./utils/logger')
+require('./OTP/RedisConfig/redis.setup')
 
 
 const apiRoutes = require('./routes/index')

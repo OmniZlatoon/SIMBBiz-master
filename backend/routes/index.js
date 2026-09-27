@@ -18,6 +18,8 @@ const uploadRoutes = require('./uploadRoutes');
 // --- AUTH ---
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
+router.post('/auth/google', authController.googleLogin);
+router.post('/auth/google/logout', protect, authController.googleLogout);
 router.get('/auth/logout', authController.logout);
 router.get('/auth/me', protect, authController.getMe);
 
