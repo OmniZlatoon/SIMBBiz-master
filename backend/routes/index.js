@@ -14,6 +14,8 @@ const costController = require('../controllers/costController');
 const shopController = require('../controllers/shopController');
 const subscriptionController = require('../controllers/subscriptionController');
 const uploadRoutes = require('./uploadRoutes');
+const passwordResetController = require('../controllers/passwordReset.controller');
+const whatsappWebhookController = require('../controllers/whatsappWebhook.controller');
 
 // --- AUTH ---
 router.post('/auth/register', authController.register);
@@ -22,6 +24,14 @@ router.post('/auth/google', authController.googleLogin);
 router.post('/auth/google/logout', protect, authController.googleLogout);
 router.get('/auth/logout', authController.logout);
 router.get('/auth/me', protect, authController.getMe);
+router.post('/auth/forget-password', passwordResetController.validateAccount);
+router.post('/auth/forget-password/email', passwordResetController.sendEmailOtp);
+router.post('/auth/forget-password/whatsapp', passwordResetController.sendWhatsAppOtp);
+router.post('/auth/forget-password/whatsapp/status', passwordResetController.getWhatsAppOtpStatus);
+router.post('/auth/forget-password/verify-otp', passwordResetController.verifyOtp);
+router.post('/auth/reset-password', passwordResetController.resetPassword);
+router.get('/webhooks/whatsapp', whatsappWebhookController.verify);
+router.post('/webhooks/whatsapp', whatsappWebhookController.receive);
 
 // --- USER BUSINESSES ---
 router.post('/user/businesses', protect, businessController.createBusiness);

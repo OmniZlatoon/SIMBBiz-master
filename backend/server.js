@@ -18,10 +18,16 @@ const apiRoutes = require('./routes/index')
 
 const app = express()
 app.use(cors({
-  origin: true, // Allow any origin in dev (or specify front-end URL)
-  credentials: true
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'ngrok-skip-browser-warning']
 }))
-app.use(bodyParser.json())
+app.use(bodyParser.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = Buffer.from(buffer)
+  }
+}))
 app.use(cookieParser())
 
 app.get('/api/ping', (req, res) => res.json({ pong: true }))

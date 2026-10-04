@@ -1,8 +1,10 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
-const getAuthHeaders = () => {
+export const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'ngrok-skip-browser-warning': 'true'
+  };
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -18,7 +20,7 @@ export const api = {
       headers: getAuthHeaders()
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API Error');
+    if (!res.ok) throw new Error(data.message || data.error || 'API Error');
     return data;
   },
   post: async (endpoint: string, body: any) => {
@@ -32,7 +34,7 @@ export const api = {
       credentials: 'include'
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API Error');
+    if (!res.ok) throw new Error(data.message || data.error || 'API Error');
     return data;
   },
   patch: async (endpoint: string, body: any) => {

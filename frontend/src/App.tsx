@@ -18,6 +18,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Market from './pages/Market';
 import Settings from './pages/Settings';
 import Billing from './pages/Billing';
+import ForgotPassword from './pages/ForgotPassword';
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -55,6 +56,7 @@ export default function App() {
           {/* Public Marketing/Auth Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/market" element={<Market />} />
           

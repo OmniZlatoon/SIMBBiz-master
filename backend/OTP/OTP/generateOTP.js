@@ -16,17 +16,11 @@ async function generateandSendOTP(email) {
         const hashedOTP = await hashOTP(otp);
 
         // Store the hash OTP in Redis
-        await redisClient.set(email, hashedOTP, 'EX', 60); // Store OTP with a 60-second expiration
-
-        //delete the OTP after expiration ( to not use of space in the Redis DB)
-        setTimeout(async () => {
-            await redisClient.del(email);
-        }, 60000); // Delete OTP after 60 seconds (1 minute)
+        await redisClient.set(email, hashedOTP, { EX: 60 }); // Store OTP with a 60-second expiration
 
 
         // Send the  original OTP to the user's email
         await SendOTPEmail(email, otp);
-        console.log(`OTP generated for ${email}: ${otp}`);
 
     } catch (error) {
         console.error('Error in generateandSendOTP:', error);
