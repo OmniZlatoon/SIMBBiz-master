@@ -12,9 +12,14 @@ const businessSchema = new mongoose.Schema({
   currency: { type: String, default: 'USD' },
   pin_hash: { type: String },
   auto_lock_min: { type: Number, default: 0 },
-  subscription_plan: { type: String, default: 'free' },
+  subscription_plan: { type: String, default: 'trial' },
   subscription_expiry: { type: Date },
-  item_slots_available: { type: Number, default: 5 },
+  item_slots_available: { type: Number, default: 50 },
+  applied_subscription_payment_ids: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPayment' }],
+    default: [],
+    select: false
+  },
   isSuspended: { type: Boolean, default: false }
 }, { timestamps: true });
 

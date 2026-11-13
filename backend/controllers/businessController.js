@@ -1,10 +1,36 @@
 const Business = require('../models/Business');
+const { getTrialWindow } = require('../services/subscriptionPlans');
+const {
+  findUntrustedSubscriptionFields,
+  recordSubscriptionSecurityEvent
+} = require('../services/subscriptionSecurity');
+const { syncUserSubscription } = require('../services/userSubscription');
 
 // Create a new business for the logged-in user
 exports.createBusiness = async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({ success: false, error: 'Invalid store data' });
+    }
+    const untrustedFields = findUntrustedSubscriptionFields(req.body);
+    if (untrustedFields.length > 0) {
+      await recordSubscriptionSecurityEvent({
+        userId: req.user._id,
+        businessId: null,
+        source: 'store_create',
+        reason: 'client_attempted_to_set_subscription_values',
+        fields: untrustedFields,
+        req
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Subscription status and upload limits are managed by the server.'
+      });
+    }
+
     const { name, location, phone, lang, category, description } = req.body;
     if (!name) return res.status(400).json({ success: false, error: 'name is required' });
+    const trial = getTrialWindow(req.user.createdAt);
     
     // Auto-generate slug handled by mongoose pre-validate hook
     const business = new Business({ 
@@ -14,10 +40,13 @@ exports.createBusiness = async (req, res) => {
       category, 
       location, 
       phone, 
-      lang: lang || 'en' 
+      lang: lang || 'en',
+      subscription_plan: trial.active ? 'trial' : 'expired',
+      item_slots_available: trial.active ? 50 : 0
     });
     
     await business.save();
+    await syncUserSubscription(req.user);
     res.status(201).json({ success: true, data: business });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ success: false, error: 'A store with this generated URL already exists. Please choose a different name.' });
@@ -47,9 +76,34 @@ exports.getBySlug = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
+    const allowedFields = ['name', 'description', 'category', 'location', 'phone', 'lang', 'currency'];
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({ success: false, error: 'Invalid store profile data' });
+    }
+    const untrustedFields = findUntrustedSubscriptionFields(req.body);
+    if (untrustedFields.length > 0) {
+      await recordSubscriptionSecurityEvent({
+        userId: req.user._id,
+        businessId: req.params.id,
+        source: 'store_update',
+        reason: 'client_attempted_to_set_subscription_values',
+        fields: untrustedFields,
+        req
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Subscription status and upload limits are managed by the server.'
+      });
+    }
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([field]) => allowedFields.includes(field))
+    );
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'No editable store profile fields were provided' });
+    }
     const business = await Business.findOneAndUpdate(
       { _id: req.params.id, owner_id: req.user._id }, 
-      req.body, 
+      updates,
       { new: true }
     );
     if (!business) return res.status(404).json({ success: false, error: 'Business not found or unauthorized' });
