@@ -8,6 +8,10 @@ interface User {
   email: string;
   role?: string;
   token?: string;
+  authProvider?: string;
+  firebaseUid?: string;
+  subscribed: boolean;
+  subscribed_plan: 'trial' | 'basic' | 'pro' | null;
 }
 
 interface Store {

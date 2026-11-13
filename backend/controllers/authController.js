@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { auth } = require('../firebase/initializeFirebase');
+const { syncUserSubscription } = require('../services/userSubscription');
 
 // -----------------------------------------------------------------------------
 // APP SESSION TOKEN CREATION
@@ -28,7 +29,9 @@ const sendTokenResponse = (user, statusCode, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      authProvider: user.authProvider
+      authProvider: user.authProvider,
+      subscribed: user.subscribed,
+      subscribed_plan: user.subscribed_plan
     }
   });
 };
@@ -175,6 +178,8 @@ exports.register = async (req, res) => {
       recoveryEmail,
       whatsappNumber,
       authProvider: 'local',
+      subscribed: false,
+      subscribed_plan: 'trial',
       emailVerified: true,
       recoveryEmailVerified: recoveryEmail === email ? true : Boolean(req.body.recoveryEmailVerified),
       dateOfBirth: req.body.dateOfBirth || null,
@@ -224,6 +229,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
+    await syncUserSubscription(user);
     sendTokenResponse(user, 200, res);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -286,6 +292,7 @@ exports.googleLogin = async (req, res) => {
       await user.save();
     }
 
+    await syncUserSubscription(user);
     sendTokenResponse(user, 200, res);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -350,9 +357,21 @@ exports.googleLogout = async (req, res) => {
 // Exposes the currently authenticated user pulled from the JWT session.
 exports.getMe = async (req, res) => {
   try {
+    await syncUserSubscription(req.user);
+
     res.status(200).json({
       success: true,
-      data: req.user
+      data: {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        role: req.user.role,
+        authProvider: req.user.authProvider,
+        firebaseUid: req.user.firebaseUid,
+        subscribed: req.user.subscribed,
+        subscribed_plan: req.user.subscribed_plan,
+        createdAt: req.user.createdAt
+      }
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

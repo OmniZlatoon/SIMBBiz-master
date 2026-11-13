@@ -1,16 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Material+Icons+Outlined&family=Material+Icons&family=Roboto:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+@import "./theme.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  --color-slate-850: #151e2e;
-}
-
-@layer base {
-  body {
-    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-300;
-  }
-}
 
 @layer utilities {
   .animate-fade-in-up {

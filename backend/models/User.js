@@ -19,8 +19,27 @@ const userSchema = new mongoose.Schema({
   dateOfBirth: { type: Date, default: null },
   nationality: { type: String, default: null },
   countryOfResidence: { type: String, default: null },
+  subscribed: { type: Boolean, required: true, default: false },
+  subscribed_plan: {
+    type: String,
+    enum: ['trial', 'basic', 'pro', null],
+    default: null
+  },
+  trial_uploads_used: { type: Number, default: 0, min: 0 },
+  trial_uploads_initialized: { type: Boolean, default: false },
   role: { type: String, enum: ['user', 'admin'], default: 'user' }
 }, { timestamps: true });
+
+userSchema.pre('validate', function(next) {
+  const isPaidPlan = this.subscribed_plan === 'basic' || this.subscribed_plan === 'pro';
+  if (this.subscribed !== isPaidPlan) {
+    this.invalidate(
+      'subscribed_plan',
+      'Active subscriptions must have a paid plan, and trial or expired accounts cannot be marked subscribed'
+    );
+  }
+  next();
+});
 
 userSchema.pre('save', async function(next) {
   if (this.email) {

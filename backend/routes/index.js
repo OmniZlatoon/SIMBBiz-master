@@ -112,9 +112,10 @@ router.post('/businesses/:id/liability-payments', protect, authorizeBusinessOwne
 router.get('/businesses/:id/daily-costs', protect, authorizeBusinessOwner, costController.list);
 router.post('/businesses/:id/daily-costs', protect, authorizeBusinessOwner, costController.upsertDate);
 
-// --- SUBSCRIPTIONS & WEBHOOKS ---
-router.post('/businesses/:id/buy-spaces', protect, authorizeBusinessOwner, subscriptionController.buySpaces);
-router.post('/webhooks/paveway', subscriptionController.pavewayWebhook);
+// --- SUBSCRIPTIONS AND FAPSHI WEBHOOK ---
+router.get('/businesses/:id/subscription', protect, authorizeBusinessOwner, subscriptionController.getSubscriptionStatus);
+router.post('/businesses/:id/subscription/checkout', protect, authorizeBusinessOwner, subscriptionController.initiateCheckout);
+router.post('/webhooks/fapshi', subscriptionController.fapshiWebhook);
 
 // --- SHOP (PUBLIC) ---
 router.get('/shop', shopController.getAllStores);

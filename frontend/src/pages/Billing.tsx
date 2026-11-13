@@ -1,323 +1,372 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Loader2, CreditCard, Package, CheckCircle2, ShieldCheck, Phone, Info, Zap, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import { PageSkeleton } from '../components/PageSkeleton';
+import {
+  ArrowRight,
+  Check,
+  CheckCircle,
+  CreditCard,
+  Info,
+  Loader2,
+  Package,
+  ShieldCheck,
+  Sparkles
+} from '../components/MaterialIcon';
+import fapshiBlueLogo from '../assets/fapshi-logo-blue.svg';
+import fapshiWhiteLogo from '../assets/fapshi-logo-white.svg';
+
+interface SubscriptionPlan {
+  key: 'basic' | 'pro';
+  name: string;
+  amount: number;
+  uploads: number;
+  periodLabel: string;
+}
+
+interface SubscriptionStatus {
+  status: 'trial' | 'active' | 'expired';
+  currentPlan: string | null;
+  planName: string;
+  trialEndsAt: string | null;
+  trialDaysRemaining: number;
+  plans: SubscriptionPlan[];
+  pendingPayment: {
+    planKey: string;
+    gatewayStatus: string | null;
+    checkoutUrl?: string;
+    securityFlagged: boolean;
+  } | null;
+  latestPayment: {
+    status: 'pending' | 'completed' | 'failed';
+    planKey: string;
+    createdAt: string;
+  } | null;
+}
+
+const formatXaf = (amount: number) => `${amount.toLocaleString('fr-FR')} XAF`;
 
 export default function Billing() {
   const { activeStore } = useAuth();
-  
-  const [success, setSuccess] = useState('');
+  const activeStoreId = activeStore?._id;
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [buyLoading, setBuyLoading] = useState(false);
-  
-  const [plans, setPlans] = useState<any[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  
-  const [spacesToBuy, setSpacesToBuy] = useState(5);
-  const [paymentMethod, setPaymentMethod] = useState('MTN');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [notice, setNotice] = useState('');
+  const [now, setNow] = useState(0);
+  const hasPendingPayment = Boolean(
+    subscription?.pendingPayment &&
+    subscription.pendingPayment.gatewayStatus !== 'INITIATION_UNCONFIRMED'
+  );
 
   useEffect(() => {
-    const fetchPlans = async () => {
+    let active = true;
+    const refreshStatus = async () => {
+      if (!activeStoreId) return;
+
       try {
-        const res = await api.get('/plans');
-        if (res.success) {
-          setPlans(res.data);
+        const response = await api.get(`/businesses/${activeStoreId}/subscription`);
+        if (active) {
+          setSubscription(response.data);
+          setError('');
         }
-      } catch (e) {
-        console.error("Could not fetch plans", e);
+      } catch (requestError) {
+        if (active) {
+          setError(requestError instanceof Error ? requestError.message : 'Could not load subscription details.');
+        }
+      } finally {
+        if (active) setLoading(false);
       }
     };
-    fetchPlans();
-  }, []);
 
-  const handleBuySpaces = async (e: React.FormEvent) => {
-    e.preventDefault();
+    void refreshStatus();
+    const pollId = hasPendingPayment
+      ? window.setInterval(() => void refreshStatus(), 15000)
+      : undefined;
+    const clockStartId = window.setTimeout(() => setNow(Date.now()), 0);
+    const clockId = window.setInterval(() => setNow(Date.now()), 60000);
+
+    return () => {
+      active = false;
+      if (pollId !== undefined) window.clearInterval(pollId);
+      window.clearTimeout(clockStartId);
+      window.clearInterval(clockId);
+    };
+  }, [activeStoreId, hasPendingPayment]);
+
+  const daysRemaining = subscription?.trialEndsAt && now > 0
+    ? Math.max(0, Math.ceil((new Date(subscription.trialEndsAt).getTime() - now) / 86400000))
+    : subscription?.trialDaysRemaining || 0;
+
+  const startCheckout = async (planKey: SubscriptionPlan['key']) => {
     if (!activeStore) return;
-    
-    if ((paymentMethod === 'MTN' || paymentMethod === 'ORANGE') && !phoneNumber) {
-      setError('Phone number is required for Mobile Money payments.');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
 
-    setBuyLoading(true);
+    setCheckoutPlan(planKey);
     setError('');
-    setSuccess('');
-    
+    setNotice('');
+
     try {
-      const payload: any = {
-        payment_method: paymentMethod,
-        phone_or_card: phoneNumber
-      };
-      
-      if (selectedPlanId !== 'custom') {
-        payload.plan_id = selectedPlanId;
-      } else {
-        payload.spaces = spacesToBuy;
+      const response = await api.post(
+        `/businesses/${activeStore._id}/subscription/checkout`,
+        { planKey }
+      );
+      if (!response.data?.link) {
+        throw new Error('Fapshi did not return a payment link.');
       }
-
-      const res = await api.post(`/businesses/${activeStore._id}/buy-spaces`, payload);
-      if (res.success) {
-        setSuccess(res.message || `Payment initiated!`);
-      } else {
-        setError(res.error || 'Payment failed');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Payment failed due to an unexpected error.');
-    } finally {
-      setBuyLoading(false);
-      setTimeout(() => {
-        setSuccess('');
-        setError('');
-      }, 8000);
+      window.location.assign(response.data.link);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not start checkout.');
+      setCheckoutPlan(null);
     }
   };
-  
-  const getSelectedTotal = () => {
-    if (selectedPlanId && selectedPlanId !== 'custom') {
-      const plan = plans.find(p => p._id === selectedPlanId);
-      return plan ? plan.price : 0;
-    }
-    return spacesToBuy * 200;
-  };
 
-  // Set default plan selection when plans load
-  useEffect(() => {
-    if (plans.length > 0 && !selectedPlanId) {
-      setSelectedPlanId(plans[0]._id);
-    } else if (plans.length === 0 && !selectedPlanId) {
-      setSelectedPlanId('custom');
-    }
-  }, [plans]);
+  const plans = subscription?.plans || [];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-20 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-indigo-500 tracking-tight">
-          Billing & Subscription
-        </h1>
-        <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium">
-          Scale your business seamlessly. Purchase additional capacity and manage your store securely.
+    <div className="mx-auto max-w-6xl space-y-8 pb-12">
+      <header className="space-y-3">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-300">
+          Account billing
         </p>
-      </div>
-
-      {success && (
-        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-5 rounded-2xl flex items-start gap-4 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4">
-          <CheckCircle2 className="mt-0.5 shrink-0" size={24} />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h4 className="font-bold text-lg tracking-wide">Transaction Initiated</h4>
-            <p className="mt-1 font-medium">{success}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 md:text-4xl">
+              Choose your subscription
+            </h1>
+            <p className="mt-2 max-w-2xl text-slate-600 dark:text-slate-400">
+              Keep your catalogue growing with simple, secure Fapshi payments.
+            </p>
+          </div>
+          {subscription && (
+            <div className="flex items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 sm:self-auto">
+              <CreditCard size={18} className="text-blue-700 dark:text-blue-300" />
+              <span className="text-slate-600 dark:text-slate-300">Current plan</span>
+              <strong className="text-slate-900 dark:text-slate-100">{subscription.planName}</strong>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {subscription?.status === 'trial' && (
+        <div className="flex gap-4 rounded-2xl border border-blue-200 p-5 dark:border-blue-900/70"
+          style={{
+            backgroundColor: 'var(--banner-reminder)',
+            borderLeftColor: 'var(--callout-tip)',
+            borderLeftWidth: '4px'
+          }}
+          role="status"
+        >
+          <Info size={22} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <div>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">
+              Your 30-day trial has {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining.
+            </p>
+            <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+              Your trial began when you signed up. After it ends, choose Basic or Pro to continue uploading items.
+              Pro is recommended: 500+ uploads for 10,000 XAF over six months. Six months of Basic costs 18,000 XAF and includes 300 uploads.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {subscription?.status === 'expired' && (
+        <div className="flex gap-4 rounded-2xl border border-blue-200 p-5 dark:border-blue-900/70"
+          style={{
+            backgroundColor: 'var(--banner-reminder)',
+            borderLeftColor: 'var(--callout-tip)',
+            borderLeftWidth: '4px'
+          }}
+          role="status"
+        >
+          <Info size={22} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <div>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">Your trial or subscription has ended.</p>
+            <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+              Choose Basic or Pro below to restore item uploads. Pro includes more uploads for a lower six-month cost.
+            </p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 p-5 rounded-2xl flex items-start gap-4 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4">
-          <Info className="mt-0.5 shrink-0" size={24} />
-          <div>
-            <h4 className="font-bold text-lg tracking-wide">Transaction Issue</h4>
-            <p className="mt-1 font-medium">{error}</p>
-          </div>
+        <div
+          className="flex items-start gap-3 rounded-xl border border-blue-200 p-4 text-slate-800 dark:border-blue-900/60 dark:text-slate-100"
+          style={{ backgroundColor: 'var(--banner-reminder)' }}
+          role="alert"
+        >
+          <Info size={20} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <p>{error}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
-        {/* Left Column: Current Status */}
-        <div className="xl:col-span-1 space-y-8">
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-teal-500/20 transition-colors" />
-            <div className="absolute -top-4 -right-4 p-3 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110">
-              <Package size={160} />
-            </div>
-            
-            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-8 flex items-center gap-3 relative z-10">
-              <div className="p-3 bg-teal-500/10 rounded-xl text-teal-500"><Package size={24} /></div>
-              Store Capacity
-            </h3>
-            
-            <div className="space-y-8 relative z-10">
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] mb-2">Current Plan</p>
-                <div className="inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500/20 to-emerald-500/20 border border-teal-500/30 text-teal-700 dark:text-teal-400 font-bold text-sm tracking-wide shadow-inner uppercase">
-                  {activeStore?.subscription_plan || 'Free Tier'}
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] mb-3">Available Slots</p>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-6xl font-black text-slate-900 dark:text-white tracking-tighter drop-shadow-sm">
-                    {activeStore?.item_slots_available !== undefined ? activeStore.item_slots_available : 5}
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400 font-bold text-lg uppercase tracking-widest">items</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] p-8 text-white shadow-2xl border border-indigo-500/20 dark:border-slate-800 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-            <ShieldCheck className="text-indigo-200 dark:text-indigo-400 mb-6 drop-shadow-md relative z-10" size={40} />
-            <h3 className="text-xl font-bold mb-3 relative z-10 tracking-wide">Secure Payments</h3>
-            <p className="text-indigo-100 dark:text-slate-400 text-sm leading-relaxed font-medium relative z-10">
-              All transactions are encrypted and securely processed by our payment gateway partners. We natively support MTN MoMo and Orange Money Cameroon.
-            </p>
-          </div>
+      {notice && (
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-100" role="status">
+          <CheckCircle size={20} className="mt-0.5 shrink-0" />
+          <p>{notice}</p>
         </div>
+      )}
 
-        {/* Right Column: Payment Form & Plans */}
-        <div className="xl:col-span-2">
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 h-full relative overflow-hidden">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Purchase Capacity</h2>
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-10">Select a premium plan or purchase custom item slots.</p>
+      {subscription?.pendingPayment?.securityFlagged && (
+        <div
+          className="flex items-start gap-3 rounded-xl border border-blue-200 p-4 text-slate-800 dark:border-blue-900/60 dark:text-slate-100"
+          style={{ backgroundColor: 'var(--banner-reminder)' }}
+          role="status"
+        >
+          <Info size={20} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <p>Your payment is being reviewed. Contact support if you need help; do not make another payment.</p>
+        </div>
+      )}
 
-            <form onSubmit={handleBuySpaces} className="space-y-10 relative z-10">
-              
-              {/* Plans Selection */}
-              {plans.length > 0 && (
-                <div className="space-y-4">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Select Package</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {plans.map(p => (
-                      <div 
-                        key={p._id} 
-                        onClick={() => setSelectedPlanId(p._id)}
-                        className={`cursor-pointer rounded-2xl p-6 border-2 transition-all duration-300 relative ${selectedPlanId === p._id ? 'border-teal-500 bg-teal-50 dark:bg-teal-500/10 shadow-lg shadow-teal-500/10 transform scale-[1.02]' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-teal-500/50 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                      >
-                        {selectedPlanId === p._id && (
-                          <div className="absolute top-4 right-4 text-teal-500 bg-white dark:bg-slate-900 rounded-full shadow-sm">
-                            <CheckCircle2 size={24} className="fill-current text-white dark:text-slate-900 stroke-teal-500" />
-                          </div>
-                        )}
-                        <h4 className="text-lg font-black text-slate-900 dark:text-white">{p.name}</h4>
-                        <div className="mt-2 mb-4">
-                          <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-emerald-500 tracking-tight">{p.price.toLocaleString()}</span>
-                          <span className="text-sm font-bold text-slate-500 dark:text-slate-400 ml-1">FCFA</span>
-                        </div>
-                        <ul className="space-y-2 mb-4">
-                          <li className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-                            <Check size={16} className="text-teal-500" /> {p.slots} Product Slots
-                          </li>
-                          <li className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-                            <Check size={16} className="text-teal-500" /> {p.description || 'Premium Support'}
-                          </li>
-                        </ul>
-                      </div>
-                    ))}
+      {subscription?.pendingPayment && !subscription.pendingPayment.securityFlagged && (
+        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            {subscription.pendingPayment.gatewayStatus === 'INITIATION_UNCONFIRMED'
+              ? <Info size={20} className="mt-0.5 text-blue-700 dark:text-blue-300" />
+              : <Loader2 size={20} className="mt-0.5 animate-spin text-blue-700 dark:text-blue-300" />}
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">
+                {subscription.pendingPayment.gatewayStatus === 'INITIATION_UNCONFIRMED'
+                  ? 'Payment request needs review'
+                  : 'Waiting for Fapshi to confirm your payment'}
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {subscription.pendingPayment.gatewayStatus === 'INITIATION_UNCONFIRMED'
+                  ? 'Fapshi did not confirm the checkout link. Do not retry yet; contact support to verify the payment request.'
+                  : 'Your plan will update automatically after confirmation.'}
+              </p>
+            </div>
+          </div>
+          {subscription.pendingPayment.checkoutUrl && (
+            <a
+              href={subscription.pendingPayment.checkoutUrl}
+              className="inline-flex items-center gap-2 self-start rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 sm:self-auto"
+            >
+              Return to checkout <ArrowRight size={17} />
+            </a>
+          )}
+        </div>
+      )}
 
-                    <div 
-                      onClick={() => setSelectedPlanId('custom')}
-                      className={`cursor-pointer rounded-2xl p-6 border-2 transition-all duration-300 relative ${selectedPlanId === 'custom' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 shadow-lg shadow-indigo-500/10 transform scale-[1.02]' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-indigo-500/50 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                    >
-                      {selectedPlanId === 'custom' && (
-                        <div className="absolute top-4 right-4 text-indigo-500 bg-white dark:bg-slate-900 rounded-full shadow-sm">
-                          <CheckCircle2 size={24} className="fill-current text-white dark:text-slate-900 stroke-indigo-500" />
-                        </div>
-                      )}
-                      <h4 className="text-lg font-black text-slate-900 dark:text-white">Custom Slots</h4>
-                      <div className="mt-2 mb-4">
-                        <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 tracking-tight">200</span>
-                        <span className="text-sm font-bold text-slate-500 dark:text-slate-400 ml-1">FCFA / item</span>
-                      </div>
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4 h-11">
-                        Pay exactly for what you need. Buy slots individually.
-                      </p>
-                    </div>
+      {!subscription?.pendingPayment && subscription?.latestPayment?.status === 'failed' && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          Your last payment did not complete. You can securely try again with either plan.
+        </div>
+      )}
+
+      {loading ? (
+        <PageSkeleton variant="billing" />
+      ) : plans.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+          <p className="font-medium text-slate-900 dark:text-slate-100">Subscription plans are temporarily unavailable.</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Refresh the page or try again shortly.</p>
+        </div>
+      ) : (
+        <section className="grid gap-6 lg:grid-cols-2" aria-label="Available subscription plans">
+          {plans.map((plan) => {
+            const isPro = plan.key === 'pro';
+            const isCurrent = subscription?.currentPlan === plan.key && subscription?.status === 'active';
+            const isDisabled = Boolean(checkoutPlan || subscription?.pendingPayment);
+
+            return (
+              <article
+                key={plan.key}
+                className={`relative flex flex-col overflow-hidden rounded-3xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-slate-950 md:p-8 ${
+                  isPro
+                    ? 'border-blue-600 ring-1 ring-blue-600 dark:border-blue-400 dark:ring-blue-400'
+                    : 'border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                {isPro && (
+                  <div className="absolute right-0 top-0 inline-flex items-center gap-2 rounded-bl-2xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white dark:bg-blue-600">
+                    <Sparkles size={16} /> Recommended
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Custom Spaces Input (Only show if 'custom' is selected) */}
-              {(!plans.length || selectedPlanId === 'custom') && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                    Number of Spaces
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                      <Package className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={22} />
-                    </div>
-                    <input 
-                      type="number"
-                      min="5"
-                      value={spacesToBuy} 
-                      onChange={e => setSpacesToBuy(Math.max(5, Number(e.target.value)))}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all dark:text-white font-black text-xl"
-                    />
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+                    isPro
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
+                      : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                  }`}>
+                    {isPro ? <Sparkles size={23} /> : <Package size={23} />}
                   </div>
-                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-500">Minimum purchase is 5 spaces.</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Payment Method Select */}
-                <div className="space-y-4">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                    Payment Method
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                      <CreditCard className="text-slate-400 group-focus-within:text-teal-500 transition-colors" size={22} />
-                    </div>
-                    <select 
-                      value={paymentMethod} 
-                      onChange={e => setPaymentMethod(e.target.value)}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 outline-none transition-all dark:text-white font-bold text-lg appearance-none cursor-pointer"
-                    >
-                      <option value="MTN">MTN Mobile Money</option>
-                      <option value="ORANGE">Orange Money</option>
-                      <option value="VIRTUAL_CARD">Virtual Card (Soon)</option>
-                    </select>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{plan.name}</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {isPro ? 'For growing catalogues' : 'A practical start for your business'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Phone Number Input */}
-                <div className="space-y-4">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                    Phone Number (MoMo)
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                      <Phone className="text-slate-400 group-focus-within:text-teal-500 transition-colors" size={22} />
-                    </div>
-                    <input 
-                      type="tel"
-                      placeholder="e.g. 670000000"
-                      value={phoneNumber} 
-                      onChange={e => setPhoneNumber(e.target.value)}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 outline-none transition-all dark:text-white font-bold text-lg"
-                    />
-                  </div>
-                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-500">Required to receive the payment prompt.</p>
-                </div>
-              </div>
-
-              {/* Order Summary & Submit */}
-              <div className="pt-8 mt-10 border-t border-slate-200 dark:border-slate-800/50">
-                <div className="flex items-center justify-between mb-8 bg-slate-50 dark:bg-black/20 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <span className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Total Checkout</span>
-                  <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                    {getSelectedTotal().toLocaleString()} <span className="text-xl text-teal-600 dark:text-teal-400 uppercase">FCFA</span>
+                <div className="mt-8 flex items-baseline gap-2">
+                  <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                    {formatXaf(plan.amount)}
                   </span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">/ {plan.periodLabel}</span>
                 </div>
-                
-                <button 
-                  type="submit" 
-                  disabled={buyLoading} 
-                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-900 px-8 py-5 rounded-2xl font-black text-lg tracking-widest uppercase transition-all transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-teal-500/30 disabled:opacity-70 disabled:transform-none disabled:shadow-none"
+
+                <div className="mt-6 space-y-3">
+                  <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <Check size={18} className="shrink-0 text-blue-700 dark:text-blue-300" />
+                    {plan.key === 'pro' ? '500+ item uploads' : '50 item uploads'}
+                  </p>
+                  <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <Check size={18} className="shrink-0 text-blue-700 dark:text-blue-300" />
+                    {plan.key === 'pro' ? 'Valid for six months' : 'Valid for one month'}
+                  </p>
+                  <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <Check size={18} className="shrink-0 text-blue-700 dark:text-blue-300" />
+                    Secure hosted checkout by Fapshi
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isDisabled || isCurrent}
+                  onClick={() => void startCheckout(plan.key)}
+                  className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    isPro
+                      ? 'bg-blue-700 text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500'
+                      : 'border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
+                  }`}
                 >
-                  {buyLoading ? (
-                    <><Loader2 size={24} className="animate-spin" /> Verifying...</>
+                  {checkoutPlan === plan.key ? (
+                    <><Loader2 size={19} className="animate-spin" /> Connecting to Fapshi</>
+                  ) : isCurrent ? (
+                    'Current plan'
                   ) : (
-                    <><Zap size={24} strokeWidth={2.5} /> Pay Securely</>
+                    <>Choose {plan.name} <ArrowRight size={18} /></>
                   )}
                 </button>
-              </div>
-            </form>
-          </div>
+
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {!loading && plans.length > 0 && (
+        <div className="flex flex-col items-center gap-1.5 pt-1 text-center">
+          <p className="text-[11px] font-medium tracking-wide text-slate-500 dark:text-slate-400">
+            Powered by Fapshi
+          </p>
+          <img src={fapshiBlueLogo} alt="Fapshi" className="h-6 w-[68px] object-contain dark:hidden" />
+          <img src={fapshiWhiteLogo} alt="Fapshi" className="hidden h-6 w-[68px] object-contain dark:block" />
         </div>
+      )}
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <ShieldCheck size={22} className="mt-0.5 shrink-0 text-blue-700 dark:text-blue-300" />
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            Plan prices and upload limits are verified by SIMBBiz before checkout. Fapshi securely processes the payment.
+          </p>
+        </div>
+        <Link to="/dashboard/settings" className="inline-flex items-center gap-1 self-start font-semibold text-blue-700 hover:underline dark:text-blue-300 sm:self-auto">
+          View profile <ArrowRight size={17} />
+        </Link>
       </div>
     </div>
   );

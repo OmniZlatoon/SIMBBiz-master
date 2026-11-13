@@ -1,11 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Save, User, Store, Shield, CheckCircle2, Moon, Sun, Loader2 } from 'lucide-react';
+import { ArrowRight, CreditCard, Save, User, Store, Shield, CheckCircle2, Moon, Sun, Loader2 } from '../components/MaterialIcon';
+import { api } from '../utils/api';
+
+interface SubscriptionSummary {
+  status: 'trial' | 'active' | 'expired';
+  planName: string;
+  expiresAt: string | null;
+  trialDaysRemaining: number;
+}
 
 export default function Settings() {
   const { user, activeStore } = useAuth();
+  const activeStoreId = activeStore?._id;
   const { theme, toggleTheme } = useTheme();
+  const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -17,6 +29,30 @@ export default function Settings() {
     currency: activeStore?.currency || 'USD',
     description: activeStore?.description || ''
   });
+
+  useEffect(() => {
+    let active = true;
+    const fetchSubscription = async () => {
+      if (!activeStoreId) return;
+      try {
+        const response = await api.get(`/businesses/${activeStoreId}/subscription`);
+        if (active) {
+          setSubscription(response.data);
+          setSubscriptionError('');
+        }
+      } catch (error) {
+        console.error('Could not load subscription details', error);
+        if (active) {
+          setSubscriptionError(error instanceof Error ? error.message : 'Could not load subscription details.');
+        }
+      }
+    };
+
+    void fetchSubscription();
+    return () => {
+      active = false;
+    };
+  }, [activeStoreId]);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +190,33 @@ export default function Settings() {
               </div>
               <p className="text-xs text-slate-500 mt-1">Email is verified.</p>
             </div>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <CreditCard size={20} className="mt-0.5 text-blue-700 dark:text-blue-300" />
+              <div>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Current plan</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {subscription?.planName || (subscriptionError ? 'Unavailable' : 'Loading plan...')}
+                  {subscription?.status === 'trial' && ` - ${subscription.trialDaysRemaining} days left`}
+                </p>
+                {subscriptionError && (
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{subscriptionError}</p>
+                )}
+                {subscription?.status === 'active' && subscription.expiresAt && (
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                    Expires {new Date(subscription.expiresAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Link
+              to="/dashboard/billing"
+              className="inline-flex items-center gap-2 self-start rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-white dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800 sm:self-auto"
+            >
+              Manage plan <ArrowRight size={17} />
+            </Link>
           </div>
         </div>
         <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
