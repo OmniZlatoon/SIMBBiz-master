@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
@@ -15,7 +15,7 @@ export const getAuthHeaders = () => {
 
 export const api = {
   get: async (endpoint: string) => {
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       credentials: 'include',
       headers: getAuthHeaders()
     });
@@ -24,7 +24,7 @@ export const api = {
     return data;
   },
   post: async (endpoint: string, body: any) => {
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ export const api = {
     return data;
   },
   patch: async (endpoint: string, body: any) => {
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ export const api = {
     return data;
   },
   delete: async (endpoint: string) => {
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: getAuthHeaders()

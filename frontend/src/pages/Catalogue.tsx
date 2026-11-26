@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api, getAuthHeaders } from '../utils/api';
+import { API_BASE_URL, api, getAuthHeaders } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Search, Edit2, Trash2, X, Image as ImageIcon } from 'lucide-react';
 
@@ -53,7 +53,7 @@ export default function Catalogue() {
     data.append('image', file); // 'image' matches the backend upload.single('image')
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/upload`, {
+      const res = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: data,
