@@ -127,7 +127,7 @@ export default function Billing() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 pb-12">
       <header className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-300">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-400">
           Account billing
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -141,7 +141,7 @@ export default function Billing() {
           </div>
           {subscription && (
             <div className="flex items-center gap-2 self-start rounded-full border border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 sm:self-auto">
-              <CreditCard size={18} className="text-blue-700 dark:text-blue-300" />
+              <CreditCard size={18} className="text-teal-600 dark:text-teal-400" />
               <span className="text-slate-600 dark:text-slate-300">Current plan</span>
               <strong className="text-slate-900 dark:text-slate-100">{subscription.planName}</strong>
             </div>
@@ -150,37 +150,27 @@ export default function Billing() {
       </header>
 
       {subscription?.status === 'trial' && (
-        <div className="flex gap-4 rounded-2xl border border-blue-200 p-5 dark:border-blue-900/70"
-          style={{
-            backgroundColor: 'var(--banner-reminder)',
-            borderLeftColor: 'var(--callout-tip)',
-            borderLeftWidth: '4px'
-          }}
+        <div className="flex gap-4 rounded-2xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-900/30"
           role="status"
         >
-          <Info size={22} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <Info size={22} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div>
             <p className="font-semibold text-slate-900 dark:text-slate-100">
               Your 30-day trial has {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining.
             </p>
             <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
               Your trial began when you signed up. After it ends, choose Basic or Pro to continue uploading items.
-              Pro is recommended: 500+ uploads for 10,000 XAF over six months. Six months of Basic costs 18,000 XAF and includes 300 uploads.
+              Pro is recommended: 500+ uploads for 1,000 XAF over six months. Six months of Basic costs 3,000 XAF and includes 300 uploads.
             </p>
           </div>
         </div>
       )}
 
       {subscription?.status === 'expired' && (
-        <div className="flex gap-4 rounded-2xl border border-blue-200 p-5 dark:border-blue-900/70"
-          style={{
-            backgroundColor: 'var(--banner-reminder)',
-            borderLeftColor: 'var(--callout-tip)',
-            borderLeftWidth: '4px'
-          }}
+        <div className="flex gap-4 rounded-2xl border border-rose-200 border-l-4 border-l-rose-500 bg-rose-50 p-5 dark:border-rose-900/50 dark:bg-rose-900/30"
           role="status"
         >
-          <Info size={22} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <Info size={22} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
           <div>
             <p className="font-semibold text-slate-900 dark:text-slate-100">Your trial or subscription has ended.</p>
             <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
@@ -192,17 +182,16 @@ export default function Billing() {
 
       {error && (
         <div
-          className="flex items-start gap-3 rounded-xl border border-blue-200 p-4 text-slate-800 dark:border-blue-900/60 dark:text-slate-100"
-          style={{ backgroundColor: 'var(--banner-reminder)' }}
+          className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-900/30 dark:text-rose-200"
           role="alert"
         >
-          <Info size={20} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <Info size={20} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
           <p>{error}</p>
         </div>
       )}
 
       {notice && (
-        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-100" role="status">
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-900/30 dark:text-emerald-400" role="status">
           <CheckCircle size={20} className="mt-0.5 shrink-0" />
           <p>{notice}</p>
         </div>
@@ -210,11 +199,10 @@ export default function Billing() {
 
       {subscription?.pendingPayment?.securityFlagged && (
         <div
-          className="flex items-start gap-3 rounded-xl border border-blue-200 p-4 text-slate-800 dark:border-blue-900/60 dark:text-slate-100"
-          style={{ backgroundColor: 'var(--banner-reminder)' }}
+          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-slate-800 dark:border-amber-900/50 dark:bg-amber-900/30 dark:text-slate-100"
           role="status"
         >
-          <Info size={20} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <Info size={20} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <p>Your payment is being reviewed. Contact support if you need help; do not make another payment.</p>
         </div>
       )}
@@ -223,8 +211,8 @@ export default function Billing() {
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             {subscription.pendingPayment.gatewayStatus === 'INITIATION_UNCONFIRMED'
-              ? <Info size={20} className="mt-0.5 text-blue-700 dark:text-blue-300" />
-              : <Loader2 size={20} className="mt-0.5 animate-spin text-blue-700 dark:text-blue-300" />}
+              ? <Info size={20} className="mt-0.5 text-teal-600 dark:text-teal-400" />
+              : <Loader2 size={20} className="mt-0.5 animate-spin text-teal-600 dark:text-teal-400" />}
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100">
                 {subscription.pendingPayment.gatewayStatus === 'INITIATION_UNCONFIRMED'
@@ -241,7 +229,7 @@ export default function Billing() {
           {subscription.pendingPayment.checkoutUrl && (
             <a
               href={subscription.pendingPayment.checkoutUrl}
-              className="inline-flex items-center gap-2 self-start rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 sm:self-auto"
+              className="inline-flex items-center gap-2 self-start rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 sm:self-auto"
             >
               Return to checkout <ArrowRight size={17} />
             </a>
@@ -274,12 +262,12 @@ export default function Billing() {
                 key={plan.key}
                 className={`relative flex flex-col overflow-hidden rounded-3xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-slate-950 md:p-8 ${
                   isPro
-                    ? 'border-blue-600 ring-1 ring-blue-600 dark:border-blue-400 dark:ring-blue-400'
+                    ? 'border-teal-500 ring-1 ring-teal-500 dark:border-teal-400 dark:ring-teal-400'
                     : 'border-slate-200 dark:border-slate-700'
                 }`}
               >
                 {isPro && (
-                  <div className="absolute right-0 top-0 inline-flex items-center gap-2 rounded-bl-2xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white dark:bg-blue-600">
+                  <div className="absolute right-0 top-0 inline-flex items-center gap-2 rounded-bl-2xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white dark:bg-teal-600">
                     <Sparkles size={16} /> Recommended
                   </div>
                 )}
@@ -287,7 +275,7 @@ export default function Billing() {
                 <div className="flex items-center gap-3">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
                     isPro
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
+                      ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200'
                       : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
                   }`}>
                     {isPro ? <Sparkles size={23} /> : <Package size={23} />}
@@ -309,15 +297,15 @@ export default function Billing() {
 
                 <div className="mt-6 space-y-3">
                   <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
-                    <Check size={18} className="shrink-0 text-blue-700 dark:text-blue-300" />
+                    <Check size={18} className="shrink-0 text-teal-600 dark:text-teal-400" />
                     {plan.key === 'pro' ? '500+ item uploads' : '50 item uploads'}
                   </p>
                   <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
-                    <Check size={18} className="shrink-0 text-blue-700 dark:text-blue-300" />
+                    <Check size={18} className="shrink-0 text-teal-600 dark:text-teal-400" />
                     {plan.key === 'pro' ? 'Valid for six months' : 'Valid for one month'}
                   </p>
                   <p className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
-                    <Check size={18} className="shrink-0 text-blue-700 dark:text-blue-300" />
+                    <Check size={18} className="shrink-0 text-teal-600 dark:text-teal-400" />
                     Secure hosted checkout by Fapshi
                   </p>
                 </div>
@@ -328,7 +316,7 @@ export default function Billing() {
                   onClick={() => void startCheckout(plan.key)}
                   className={`mt-8 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                     isPro
-                      ? 'bg-blue-700 text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500'
+                      ? 'bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500'
                       : 'border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -359,12 +347,12 @@ export default function Billing() {
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <ShieldCheck size={22} className="mt-0.5 shrink-0 text-blue-700 dark:text-blue-300" />
+          <ShieldCheck size={22} className="mt-0.5 shrink-0 text-teal-600 dark:text-teal-400" />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             Plan prices and upload limits are verified by SIMBBiz before checkout. Fapshi securely processes the payment.
           </p>
         </div>
-        <Link to="/dashboard/settings" className="inline-flex items-center gap-1 self-start font-semibold text-blue-700 hover:underline dark:text-blue-300 sm:self-auto">
+        <Link to="/dashboard/settings" className="inline-flex items-center gap-1 self-start font-semibold text-teal-600 hover:underline dark:text-teal-400 sm:self-auto">
           View profile <ArrowRight size={17} />
         </Link>
       </div>

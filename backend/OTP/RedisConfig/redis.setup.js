@@ -2,7 +2,22 @@ const { createClient } = require('redis');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-const redisUrl = new URL(process.env.REDIS_URI);
+const redisUri = process.env.REDIS_URI && process.env.REDIS_URI.trim();
+if (!redisUri) {
+    throw new Error('REDIS_URI is required. Set it in backend/.env to your Redis connection URL.');
+}
+
+let redisUrl;
+try {
+    redisUrl = new URL(redisUri);
+} catch {
+    throw new Error('Invalid REDIS_URI. Expected a valid redis:// or rediss:// URL.');
+}
+
+if (redisUrl.protocol !== 'redis:' && redisUrl.protocol !== 'rediss:') {
+    throw new Error('Invalid REDIS_URI. Expected a redis:// or rediss:// URL.');
+}
+
 if (redisUrl.hostname.endsWith('.upstash.io') && redisUrl.protocol === 'redis:') {
     redisUrl.protocol = 'rediss:';
 }

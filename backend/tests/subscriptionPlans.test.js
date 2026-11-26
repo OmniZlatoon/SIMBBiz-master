@@ -20,8 +20,8 @@ test('exposes only the server-priced Basic and Pro plans', () => {
       { amount: plan.amount, uploads: plan.uploads, durationMonths: plan.durationMonths }
     ])),
     {
-      basic: { amount: 3000, uploads: 50, durationMonths: 1 },
-      pro: { amount: 10000, uploads: 500, durationMonths: 6 }
+      basic: { amount: 500, uploads: 50, durationMonths: 1 },
+      pro: { amount: 1000, uploads: 500, durationMonths: 6 }
     }
   );
   assert.equal(getPlan('free'), null);

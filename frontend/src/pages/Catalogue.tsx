@@ -146,7 +146,7 @@ export default function Catalogue() {
               {loading ? (
                 <tr><td colSpan={4} className="p-5"><PageSkeleton variant="list" /></td></tr>
               ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">No products found. Add your first product to get started!</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No products found. Add your first product to get started!</td></tr>
               ) : (
                 filteredProducts.map((product: any) => (
                   <tr key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
@@ -158,8 +158,8 @@ export default function Catalogue() {
                         <div>
                           <p className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
                             {product.name}
-                            {product.is_promotion && <span className="bg-teal-100 text-teal-800 text-[10px] px-1.5 py-0.5 rounded font-bold">PROMO</span>}
-                            {product.discount > 0 && <span className="bg-rose-100 text-rose-700 text-[10px] px-1.5 py-0.5 rounded font-bold">-{product.discount}%</span>}
+                            {product.is_promotion && <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-bold text-teal-800 dark:bg-teal-900/30 dark:text-teal-400">PROMO</span>}
+                            {product.discount > 0 && <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">-{product.discount}%</span>}
                           </p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{product.category_id?.name || 'Uncategorized'}</p>
                         </div>

@@ -28,8 +28,8 @@ function getFapshiBaseUrl() {
 }
 
 function getFapshiCredentials() {
-  const apiUser = process.env.FAPSHI_API_USER;
-  const apiSecret = process.env.FAPSHI_API_SECRET;
+  const apiUser = process.env.FAPSHI_API_USER || process.env.API_USER;
+  const apiSecret = process.env.FAPSHI_API_SECRET || process.env.API_SECRET;
   if (!apiUser || !apiSecret) return null;
 
   return {

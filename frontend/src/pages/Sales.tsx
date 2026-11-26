@@ -35,7 +35,7 @@ export default function Sales() {
           <input 
             type="text" 
             placeholder="Search sales by customer..." 
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
         </div>
         <button className="bg-teal-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-teal-700 transition flex items-center gap-2">
@@ -43,39 +43,39 @@ export default function Sales() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-950">
         <div className="overflow-x-auto">
           <table className="w-full text-left whitespace-nowrap">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
               <tr>
-                <th className="px-6 py-4 font-semibold text-slate-600">Date</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Customer</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Type</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Total</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Date</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Customer</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Type</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {loading ? (
                 <tr><td colSpan={4} className="p-5"><PageSkeleton variant="list" /></td></tr>
               ) : sales.length === 0 ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">No sales recorded yet.</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No sales recorded yet.</td></tr>
               ) : (
                 sales.map((sale: any) => (
-                  <tr key={sale._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-600 flex items-center gap-2">
+                  <tr key={sale._id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900">
+                    <td className="flex items-center gap-2 px-6 py-4 text-slate-600 dark:text-slate-300">
                       <Calendar size={16} className="text-slate-400"/>
                       {new Date(sale.sale_date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 font-medium text-slate-800">{sale.customer_name || 'Walk-in'}</td>
+                    <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{sale.customer_name || 'Walk-in'}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase
-                        ${sale.type === 'cash' ? 'bg-emerald-100 text-emerald-800' : 
-                          sale.type === 'credit' ? 'bg-rose-100 text-rose-800' : 
-                          'bg-blue-100 text-blue-800'}`}>
+                        ${sale.type === 'cash' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                          sale.type === 'credit' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' :
+                          'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}>
                         {sale.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-semibold text-slate-800">${sale.total}</td>
+                    <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">${sale.total}</td>
                   </tr>
                 ))
               )}

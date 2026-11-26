@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
-    allowedHosts: [ 'https://subtarsal-kathyrn-untreated.ngrok-free.dev'],
+    allowedHosts: [ 'subtarsal-kathyrn-untreated.ngrok-free.dev'],
     proxy: {
       '/api': {
         target: 'http://localhost:4000',

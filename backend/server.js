@@ -1,3 +1,4 @@
+const config = require('./config')
 const express = require('express')
 const { auth, admin } = require('./firebase/initializeFirebase')
 const mongoose = require('mongoose')
@@ -9,7 +10,6 @@ const fs = require('fs')
 const Business = require('./models/Business')
 const routes = require('./routes/itemRoutes')
 const setupSwagger = require('./swagger')
-const config = require('./config')
 const logger = require('./utils/logger')
 require('./OTP/RedisConfig/redis.setup')
 

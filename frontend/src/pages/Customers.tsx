@@ -35,7 +35,7 @@ export default function Customers() {
           <input 
             type="text" 
             placeholder="Search customers..." 
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
         </div>
         <button className="bg-teal-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-teal-700 transition flex items-center gap-2">
@@ -43,30 +43,30 @@ export default function Customers() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-950">
         <div className="overflow-x-auto">
           <table className="w-full text-left whitespace-nowrap">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
               <tr>
-                <th className="px-6 py-4 font-semibold text-slate-600">Name</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Phone</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Customer Since</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Name</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Phone</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">Customer Since</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {loading ? (
                 <tr><td colSpan={3} className="p-5"><PageSkeleton variant="list" /></td></tr>
               ) : customers.length === 0 ? (
-                <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-500">No customers found.</td></tr>
+                <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No customers found.</td></tr>
               ) : (
                 customers.map((customer: any) => (
-                  <tr key={customer._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-800">{customer.name}</td>
-                    <td className="px-6 py-4 text-slate-600 flex items-center gap-2">
+                  <tr key={customer._id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900">
+                    <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{customer.name}</td>
+                    <td className="flex items-center gap-2 px-6 py-4 text-slate-600 dark:text-slate-300">
                       {customer.phone && <Phone size={14} className="text-slate-400"/>}
                       {customer.phone || '-'}
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                       {new Date(customer.since_date).toLocaleDateString()}
                     </td>
                   </tr>

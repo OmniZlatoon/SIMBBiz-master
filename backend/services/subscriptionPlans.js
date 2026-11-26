@@ -4,7 +4,7 @@ const SUBSCRIPTION_PLANS = Object.freeze({
   basic: Object.freeze({
     key: 'basic',
     name: 'Basic',
-    amount: 3000,
+    amount: 500,
     uploads: 50,
     durationMonths: 1,
     periodLabel: 'month'
@@ -12,7 +12,7 @@ const SUBSCRIPTION_PLANS = Object.freeze({
   pro: Object.freeze({
     key: 'pro',
     name: 'Pro',
-    amount: 10000,
+    amount: 1000,
     uploads: 500,
     durationMonths: 6,
     periodLabel: '6 months'

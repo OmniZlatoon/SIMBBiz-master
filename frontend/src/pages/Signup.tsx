@@ -144,7 +144,7 @@ export default function Signup() {
     <div className="min-h-screen w-full bg-slate-50">
       <div className="grid min-h-screen w-full grid-cols-1 overflow-hidden bg-white lg:grid-cols-2">
         <div className="relative hidden min-h-screen overflow-hidden bg-slate-900 lg:flex">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(11,87,208,0.2),transparent_35%),linear-gradient(135deg,_rgba(18,18,18,0.98),_rgba(33,33,33,0.9))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.2),transparent_35%),linear-gradient(135deg,_rgba(18,18,18,0.98),_rgba(33,33,33,0.9))]" />
           <img src="https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=1600&auto=format&fit=crop&q=80" alt="Business growth" className="absolute inset-0 h-full w-full object-cover opacity-40" />
 
           <div className="relative z-10 flex w-full flex-col justify-between p-10 xl:p-12">
@@ -156,7 +156,7 @@ export default function Signup() {
             </Link>
 
             <div className="max-w-xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-300/40 bg-teal-400/10 px-3 py-1.5 text-sm font-medium text-teal-100">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-300/40 bg-teal-500/10 px-3 py-1.5 text-sm font-medium text-teal-400">
                 <Sparkles size={14} /> Launch quickly, sell globally
               </div>
               <h1 className="text-4xl font-extrabold leading-tight text-white xl:text-5xl">
@@ -164,14 +164,14 @@ export default function Signup() {
               </h1>
               <div className="mt-8 space-y-5 text-slate-100">
                 <div className="flex items-start gap-3 rounded-[3px] border border-white/10 bg-white/5 p-4">
-                  <ShieldCheck size={22} className="mt-0.5 text-teal-300" />
+                  <ShieldCheck size={22} className="mt-0.5 text-teal-400" />
                   <div>
                     <p className="font-semibold text-white">Zero platform fees</p>
                     <p className="mt-1 text-sm leading-6 text-slate-300">Keep more of your revenue and connect directly with buyers through WhatsApp and storefront tools.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-[3px] border border-white/10 bg-white/5 p-4">
-                  <ShieldCheck size={22} className="mt-0.5 text-teal-300" />
+                  <ShieldCheck size={22} className="mt-0.5 text-teal-400" />
                   <div>
                     <p className="font-semibold text-white">Storefront + dashboard</p>
                     <p className="mt-1 text-sm leading-6 text-slate-300">Track growth, manage inventory, and take orders from a single system built for modern commerce.</p>

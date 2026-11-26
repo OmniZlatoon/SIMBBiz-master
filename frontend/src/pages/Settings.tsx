@@ -165,7 +165,7 @@ export default function Settings() {
             </div>
             <div>
               <button type="button" className="text-sm font-medium text-teal-600 dark:text-teal-400 hover:underline">Change Profile Picture</button>
-              <p className="text-xs text-slate-500 mt-1">JPG, GIF or PNG. Max size of 800K</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">JPG, GIF or PNG. Max size of 800K</p>
             </div>
           </div>
 
@@ -188,13 +188,13 @@ export default function Settings() {
                   <CheckCircle2 size={18} className="text-teal-500" />
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mt-1">Email is verified.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Email is verified.</p>
             </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <CreditCard size={20} className="mt-0.5 text-blue-700 dark:text-blue-300" />
+              <CreditCard size={20} className="mt-0.5 text-teal-600 dark:text-teal-400" />
               <div>
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Current plan</p>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
@@ -220,7 +220,7 @@ export default function Settings() {
           </div>
         </div>
         <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
-          <button type="button" className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Change Password</button>
+          <button type="button" className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">Change Password</button>
           <button type="submit" disabled={loading} className="flex items-center gap-2 bg-slate-900 dark:bg-teal-600 hover:bg-slate-800 dark:hover:bg-teal-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50">
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             Save Profile

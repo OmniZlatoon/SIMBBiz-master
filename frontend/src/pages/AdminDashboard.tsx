@@ -113,7 +113,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-slate-300">
+    <div className="relative min-h-screen overflow-hidden bg-[#0A0F1C] font-sans text-slate-300">
       {/* Dynamic Background Blurs */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-teal-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
@@ -181,8 +181,8 @@ export default function AdminDashboard() {
                   <BarChart data={analytics.signupsByDay}>
                     <defs>
                       <linearGradient id="colorSignups" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4b91f1" />
-                        <stop offset="100%" stopColor="#0b57d0" />
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#6366f1" />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />

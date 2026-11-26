@@ -74,12 +74,12 @@ export default function Login() {
     <div className="min-h-screen w-full bg-slate-50">
       <div className="grid min-h-screen w-full grid-cols-1 overflow-hidden bg-white lg:grid-cols-2">
         <div className="relative hidden min-h-screen overflow-hidden bg-slate-900 lg:flex">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(11,87,208,0.2),transparent_35%),linear-gradient(135deg,_rgba(18,18,18,0.98),_rgba(33,33,33,0.9))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.2),transparent_35%),linear-gradient(135deg,_rgba(18,18,18,0.98),_rgba(33,33,33,0.9))]" />
           <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32b7?w=1600&auto=format&fit=crop&q=80" alt="Business workspace" className="absolute inset-0 h-full w-full object-cover opacity-75" />
 
           <div className="relative z-10 flex w-full flex-col justify-between p-10 xl:p-12">
             <Link to="/" className="inline-flex w-max items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-400 text-slate-900 shadow-lg shadow-teal-500/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500 text-slate-900 shadow-lg shadow-teal-500/20">
                 <Zap size={22} className="fill-current" />
               </div>
               <span className="text-2xl font-extrabold tracking-tight text-white">SIMBBiz</span>

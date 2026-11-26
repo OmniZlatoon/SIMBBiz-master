@@ -91,23 +91,18 @@ export default function Dashboard() {
     <div className="space-y-6">
       {subscription?.status === 'trial' && (
         <div
-          className="flex items-start gap-4 rounded-2xl border border-blue-200 p-5 dark:border-blue-900/70"
-          style={{
-            backgroundColor: 'var(--banner-reminder)',
-            borderLeftColor: 'var(--callout-tip)',
-            borderLeftWidth: '4px'
-          }}
+          className="flex items-start gap-4 rounded-2xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-900/30"
           role="status"
         >
-          <Info size={22} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <Info size={22} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-slate-900 dark:text-slate-100">
               You are on your 30-day trial, with {trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} remaining.
             </p>
             <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
-              After your trial, choose Basic or Pro. Pro is the better value: 500+ uploads for 10,000 XAF over six months, versus 18,000 XAF for six months of Basic and 300 uploads.
+              After your trial, choose Basic or Pro. Pro is the better value: 500+ uploads for 1,000 XAF over six months, versus 3,000 XAF for six months of Basic and 300 uploads.
             </p>
-            <Link to="/dashboard/billing" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-800 underline underline-offset-2 dark:text-blue-200">
+            <Link to="/dashboard/billing" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 underline underline-offset-2 dark:text-amber-300">
               Compare plans
             </Link>
           </div>
@@ -116,21 +111,16 @@ export default function Dashboard() {
 
       {subscription?.status === 'expired' && (
         <div
-          className="flex items-start gap-4 rounded-2xl border border-blue-200 p-5 dark:border-blue-900/70"
-          style={{
-            backgroundColor: 'var(--banner-reminder)',
-            borderLeftColor: 'var(--callout-tip)',
-            borderLeftWidth: '4px'
-          }}
+          className="flex items-start gap-4 rounded-2xl border border-rose-200 border-l-4 border-l-rose-500 bg-rose-50 p-5 dark:border-rose-900/50 dark:bg-rose-900/30"
           role="status"
         >
-          <Info size={22} className="mt-0.5 shrink-0" style={{ color: 'var(--callout-tip)' }} />
+          <Info size={22} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
           <div>
             <p className="font-semibold text-slate-900 dark:text-slate-100">Your trial or subscription has ended.</p>
             <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
               Choose Basic or Pro to continue uploading items.
             </p>
-            <Link to="/dashboard/billing" className="mt-3 inline-flex text-sm font-semibold text-blue-800 underline underline-offset-2 dark:text-blue-200">
+            <Link to="/dashboard/billing" className="mt-3 inline-flex text-sm font-semibold text-rose-700 underline underline-offset-2 dark:text-rose-300">
               View subscription plans
             </Link>
           </div>
@@ -139,8 +129,7 @@ export default function Dashboard() {
 
       {subscriptionError && (
         <div
-          className="rounded-xl border border-blue-200 p-4 text-sm text-slate-800 dark:border-blue-900/60 dark:text-slate-100"
-          style={{ backgroundColor: 'var(--banner-reminder)' }}
+          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-900/30 dark:text-rose-200"
           role="alert"
         >
           Subscription status could not be loaded. {subscriptionError}
@@ -149,9 +138,9 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard title="Revenue" value={`$${stats.total_revenue}`} icon={TrendingUp} color="text-teal-600" bg="bg-teal-50 dark:bg-teal-900/30" />
-        <StatCard title="Credit" value={`$${stats.total_credit}`} icon={CreditCard} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-900/30" />
+        <StatCard title="Credit" value={`$${stats.total_credit}`} icon={CreditCard} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-900/30" />
         <StatCard title="Sales" value={stats.sale_count.toString()} icon={ShoppingBag} color="text-indigo-600" bg="bg-indigo-50 dark:bg-indigo-900/30" />
-        <StatCard title="Customers" value={stats.customer_count.toString()} icon={Users} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-900/30" />
+        <StatCard title="Customers" value={stats.customer_count.toString()} icon={Users} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-900/30" />
         <StatCard title="Products" value={stats.total_products.toString()} icon={Package} color="text-sky-600" bg="bg-sky-50 dark:bg-sky-900/30" />
         <StatCard title="Promos" value={stats.promo_products.toString()} icon={Tag} color="text-fuchsia-600" bg="bg-fuchsia-50 dark:bg-fuchsia-900/30" />
       </div>

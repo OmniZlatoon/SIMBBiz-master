@@ -39,13 +39,13 @@ export default function Layout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-white text-slate-800 transition-[width,transform] duration-300 dark:bg-slate-900 dark:text-slate-200 md:relative md:translate-x-0 ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-slate-900 text-white transition-[width,transform] duration-300 dark:border-r dark:border-slate-800 dark:bg-slate-950 md:relative md:translate-x-0 ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 flex items-center justify-between">
           <div className={sidebarCollapsed ? 'md:hidden' : ''}>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">SIMBBiz</h1>
-            <p className="mt-1 max-w-[150px] truncate text-sm text-slate-500">{activeStore?.name || 'Loading Store...'}</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-teal-400">SIMBBiz</h1>
+            <p className="mt-1 max-w-[150px] truncate text-sm text-slate-400">{activeStore?.name || 'Loading Store...'}</p>
           </div>
-          <button className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 md:hidden" onClick={() => setSidebarOpen(false)}>
+          <button className="text-slate-400 hover:text-white md:hidden" onClick={() => setSidebarOpen(false)}>
             <X size={24} />
           </button>
         </div>
@@ -59,21 +59,21 @@ export default function Layout() {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''} ${
-                  isActive ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+                  isActive ? 'bg-teal-500/10 text-teal-400' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
                 title={sidebarCollapsed ? item.name : undefined}
               >
-                <Icon size={20} filled={isActive} className={isActive ? 'text-blue-600 dark:text-blue-400' : ''} />
+                <Icon size={20} filled={isActive} className={isActive ? 'text-teal-400' : ''} />
                 <span className={`font-medium ${sidebarCollapsed ? 'md:hidden' : ''}`}>{item.name}</span>
               </Link>
             );
           })}
         </nav>
-        <div className="mt-auto space-y-2 border-t border-slate-200 p-4 dark:border-slate-800">
+        <div className="mt-auto space-y-2 border-t border-slate-800 p-4">
           {user?.role === 'admin' && (
             <Link 
               to="/admin"
-              className={`flex w-full items-center space-x-3 rounded-lg bg-blue-50 px-4 py-3 text-blue-700 transition hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30 ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}`}
+              className={`flex w-full items-center space-x-3 rounded-lg bg-indigo-500/10 px-4 py-3 text-indigo-400 transition hover:bg-indigo-500/20 ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}`}
               title={sidebarCollapsed ? 'System Admin' : undefined}
             >
               <Users size={20} filled />
@@ -82,7 +82,7 @@ export default function Layout() {
           )}
           <button 
             onClick={handleLogout}
-            className={`flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-slate-600 transition hover:bg-slate-100 hover:text-rose-600 dark:hover:bg-slate-800 dark:hover:text-rose-400 ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}`}
+            className={`flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-rose-400 ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}`}
             title={sidebarCollapsed ? 'Logout' : undefined}
           >
             <LogOut size={20} />
@@ -90,7 +90,7 @@ export default function Layout() {
           </button>
           <button
             type="button"
-            className={`flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-slate-600 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}`}
+            className={`flex w-full items-center space-x-3 rounded-lg px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}`}
             onClick={() => {
               if (window.matchMedia('(min-width: 768px)').matches) {
                 setSidebarCollapsed((collapsed) => !collapsed);
@@ -109,10 +109,10 @@ export default function Layout() {
       </aside>
       
       {/* Main Content */}
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-slate-50 transition-colors dark:bg-slate-950">
-        <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 transition-colors dark:border-slate-800 dark:bg-slate-900 md:px-8">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-slate-50 transition-colors dark:bg-slate-900">
+        <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 transition-colors dark:border-slate-800 dark:bg-slate-950 md:px-8">
           <div className="flex items-center gap-4">
-            <button className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 md:hidden" onClick={() => setSidebarOpen(true)}>
+            <button className="text-slate-600 hover:text-teal-600 dark:text-slate-400 dark:hover:text-teal-400 md:hidden" onClick={() => setSidebarOpen(true)}>
               <Menu size={24} />
             </button>
             <h2 className="hidden truncate text-xl font-semibold text-slate-800 dark:text-slate-100 sm:block">
@@ -144,11 +144,11 @@ export default function Layout() {
                 {stores.map(store => (
                   <option key={store._id} value={store._id} className="dark:bg-slate-900">{store.name}</option>
                 ))}
-                <option value="new" className="font-bold text-blue-600 dark:bg-slate-900 dark:text-blue-400">+ Create New Store</option>
+                <option value="new" className="font-bold text-teal-600 dark:bg-slate-900 dark:text-teal-400">+ Create New Store</option>
               </select>
             </div>
             
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 font-bold uppercase text-blue-700 dark:border-blue-800 dark:bg-blue-900/50 dark:text-blue-300" title={user?.name}>
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-teal-200 bg-teal-100 font-bold uppercase text-teal-700 dark:border-teal-800 dark:bg-teal-900/50 dark:text-teal-400" title={user?.name}>
               {user?.name?.charAt(0) || 'U'}
             </div>
           </div>
