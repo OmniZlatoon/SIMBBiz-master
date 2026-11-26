@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Search, Phone } from 'lucide-react';
+import { Plus, Search, Phone } from '../components/MaterialIcon';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function Customers() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -54,7 +55,7 @@ export default function Customers() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
-                <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-500">Loading customers...</td></tr>
+                <tr><td colSpan={3} className="p-5"><PageSkeleton variant="list" /></td></tr>
               ) : customers.length === 0 ? (
                 <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-500">No customers found.</td></tr>
               ) : (

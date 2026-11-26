@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { PieChart, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { PieChart, TrendingUp, TrendingDown, DollarSign } from '../components/MaterialIcon';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function Reports() {
   const [summary, setSummary] = useState<any>(null);
@@ -26,7 +27,7 @@ export default function Reports() {
     }
   };
 
-  if (loading) return <div className="text-slate-500">Loading reports...</div>;
+  if (loading) return <PageSkeleton variant="dashboard" />;
 
   return (
     <div className="space-y-6">

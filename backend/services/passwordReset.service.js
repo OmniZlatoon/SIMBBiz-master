@@ -16,7 +16,7 @@ const {
   normalizeEmail,
   parseWhatsAppHandoffCode,
   requestHasValidEmailFields
-} = require('../OTP/PasswordReset/passwordReset.utils');
+} = require('../utils/passwordReset.utils');
 
 const OTP_TTL_SECONDS = 5 * 60;
 const RESET_TOKEN_TTL_SECONDS = 5 * 60;
@@ -25,12 +25,13 @@ const MAX_OTP_ATTEMPTS = 5;
 const RECOVERY_FLOW_TTL_SECONDS = 5 * 60;
 const WHATSAPP_HANDOFF_TTL_SECONDS = 5 * 60;
 const WHATSAPP_HANDOFF_COOLDOWN_SECONDS = 60;
+const RECOVERY_RATE_LIMIT_WINDOW_SECONDS = 60;
+const RECOVERY_ACCOUNT_RATE_LIMIT = 5;
+const RECOVERY_IP_RATE_LIMIT = 10;
+const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const otpExpiryTimers = new Map();
 
-const isOtpDebugLoggingEnabled = () => (
-  process.env.NODE_ENV !== 'production' &&
-  process.env.OTP_DEBUG_LOGGING !== 'false'
-);
+const isOtpDebugLoggingEnabled = () => process.env.OTP_DEBUG_LOGGING === 'true';
 
 const maskEmail = (email) => {
   const [name, domain] = email.split('@');
@@ -61,6 +62,36 @@ const findEligibleUser = async (email, recoveryEmail) => User.findOne({
   authProvider: 'local'
 });
 
+const getRecoveryRateLimitKey = ({ email, ipAddress }) => {
+  const digest = createHash('sha256').update(`${email}|${ipAddress || 'unknown'}`).digest('hex');
+  return `password-reset:rate-limit:${digest}`;
+};
+
+const applyRecoveryRateLimit = async ({ email, ipAddress }) => {
+  const key = getRecoveryRateLimitKey({ email: normalizeEmail(email), ipAddress: String(ipAddress || '').trim() || 'unknown' });
+  const current = Number(await redisClient.get(key) || 0);
+  if (current >= RECOVERY_IP_RATE_LIMIT) {
+    const error = new Error('Too many recovery attempts. Please wait a moment and try again.');
+    error.statusCode = 429;
+    throw error;
+  }
+
+  const accountKey = `password-reset:rate-limit:account:${createHash('sha256').update(normalizeEmail(email)).digest('hex')}`;
+  const accountCount = Number(await redisClient.get(accountKey) || 0);
+  if (accountCount >= RECOVERY_ACCOUNT_RATE_LIMIT) {
+    const error = new Error('Too many recovery attempts for this account. Please wait and try again later.');
+    error.statusCode = 429;
+    throw error;
+  }
+
+  await redisClient.multi()
+    .incr(key)
+    .expire(key, RECOVERY_RATE_LIMIT_WINDOW_SECONDS)
+    .incr(accountKey)
+    .expire(accountKey, RECOVERY_RATE_LIMIT_WINDOW_SECONDS)
+    .exec();
+};
+
 const ensureRedisReady = () => {
   if (redisClient.isReady) {
     return;
@@ -71,7 +102,7 @@ const ensureRedisReady = () => {
   throw error;
 };
 
-const startRecovery = async ({ email: rawEmail, recoveryEmail: rawRecoveryEmail }) => {
+const startRecovery = async ({ email: rawEmail, recoveryEmail: rawRecoveryEmail, ipAddress }) => {
   if (!requestHasValidEmailFields({ email: rawEmail, recoveryEmail: rawRecoveryEmail })) {
     const error = new Error('A valid account email and recovery email are required');
     error.statusCode = 400;
@@ -81,6 +112,7 @@ const startRecovery = async ({ email: rawEmail, recoveryEmail: rawRecoveryEmail 
   const email = normalizeEmail(rawEmail);
   const recoveryEmail = normalizeEmail(rawRecoveryEmail);
   ensureRedisReady();
+  await applyRecoveryRateLimit({ email, ipAddress });
 
   const user = await findEligibleUser(email, recoveryEmail);
   if (!user) {
@@ -362,6 +394,37 @@ const getWhatsAppHandoffStatus = async ({ recoveryToken, handoffToken }) => {
   };
 };
 
+const updateWhatsAppDeliveryStatus = async ({ status, messageId }) => {
+  if (typeof status !== 'string' || typeof messageId !== 'string' || !messageId.trim()) {
+    return false;
+  }
+
+  const keys = await redisClient.keys('password-reset:whatsapp-handoff:*');
+  for (const key of keys) {
+    const serializedHandoff = await redisClient.get(key);
+    if (!serializedHandoff) continue;
+
+    try {
+      const handoff = JSON.parse(serializedHandoff);
+      if (handoff.messageId !== messageId) continue;
+
+      const allowedStatuses = new Set(['sent', 'delivered', 'read', 'failed']);
+      if (!allowedStatuses.has(status)) continue;
+
+      handoff.status = status;
+      if (status === 'failed') {
+        handoff.message = 'Meta reported that the WhatsApp delivery failed.';
+      }
+      await redisClient.set(key, JSON.stringify(handoff), { EX: WHATSAPP_HANDOFF_TTL_SECONDS });
+      return true;
+    } catch (error) {
+      continue;
+    }
+  }
+
+  return false;
+};
+
 const verifyResetOtp = async ({ recoveryToken, otp }) => {
   if (
     typeof recoveryToken !== 'string' ||
@@ -450,6 +513,15 @@ const verifyResetOtp = async ({ recoveryToken, otp }) => {
   return { resetToken };
 };
 
+const revokeFirebaseSession = async (firebaseUid) => {
+  if (!firebaseUid || !auth) return;
+  try {
+    await auth.revokeRefreshTokens(firebaseUid);
+  } catch (error) {
+    console.warn(`[PASSWORD RESET] Failed to revoke Firebase refresh tokens for ${firebaseUid}: ${error.message}`);
+  }
+};
+
 const resetPassword = async ({
   email: rawEmail,
   resetToken,
@@ -463,9 +535,9 @@ const resetPassword = async ({
     !/^[a-f0-9]{64}$/i.test(resetToken) ||
     typeof newPassword !== 'string' ||
     typeof confirmPassword !== 'string' ||
-    newPassword.length < 8
+    !PASSWORD_POLICY.test(newPassword)
   ) {
-    const error = new Error('A valid reset token and password of at least 8 characters are required');
+    const error = new Error('A valid reset token and a stronger password are required');
     error.statusCode = 400;
     throw error;
   }
@@ -526,6 +598,7 @@ const resetPassword = async ({
 
   try {
     await auth.updateUser(firebaseUser.uid, { password: newPassword });
+    await revokeFirebaseSession(firebaseUser.uid);
   } catch (firebaseError) {
     try {
       user.password = previousPasswordHash;
@@ -549,6 +622,7 @@ module.exports = {
   createWhatsAppHandoff,
   getWhatsAppHandoffStatus,
   processWhatsAppHandoff,
+  updateWhatsAppDeliveryStatus,
   resetPassword,
   verifyResetOtp
 };

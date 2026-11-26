@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../utils/api';
-import { Store, MapPin, Search, ChevronRight, LayoutGrid, Zap } from 'lucide-react';
+import { Store, MapPin, Search, ChevronRight, LayoutGrid, Zap } from '../components/MaterialIcon';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function Market() {
   const [stores, setStores] = useState<any[]>([]);
@@ -102,10 +103,7 @@ export default function Market() {
           </div>
 
           {loading ? (
-             <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-               <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-               <p className="text-lg">Loading stores...</p>
-             </div>
+             <PageSkeleton variant="list" />
           ) : filteredStores.length === 0 ? (
              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center">
                <Store size={48} className="text-slate-300 mb-4" />

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
-import { Users, Store, TrendingUp, DollarSign, ArrowLeft, Shield, Trash2, CheckCircle, XCircle, LayoutDashboard, CreditCard, Megaphone, Server, MessageSquare, Power, Package } from 'lucide-react';
+import { Users, Store, TrendingUp, DollarSign, ArrowLeft, Shield, Trash2, CheckCircle, XCircle, LayoutDashboard, CreditCard, Megaphone, Server, MessageSquare, Power, Package } from '../components/MaterialIcon';
 import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -98,7 +99,7 @@ export default function AdminDashboard() {
     fetchData();
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0A0F1C] flex items-center justify-center text-teal-400 font-medium text-lg">Loading command center...</div>;
+  if (loading) return <PageSkeleton variant="dashboard" />;
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: LayoutDashboard },
@@ -112,7 +113,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0F1C] text-slate-300 font-sans relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-slate-300">
       {/* Dynamic Background Blurs */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-teal-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
@@ -163,15 +164,15 @@ export default function AdminDashboard() {
                   <AreaChart data={analytics.salesByDay}>
                     <defs>
                       <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="var(--button-primary)" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="var(--button-primary)" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="_id" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={12} tickFormatter={(val) => `$${val}`} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }} itemStyle={{ color: '#10b981' }} />
-                    <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                    <XAxis dataKey="_id" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(val) => `$${val}`} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: 'var(--surface-dark-sidebar)', borderColor: 'var(--border-subtle)', borderRadius: '4px' }} itemStyle={{ color: 'var(--text-dark)' }} />
+                    <Area type="monotone" dataKey="total" stroke="var(--button-primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -180,14 +181,14 @@ export default function AdminDashboard() {
                   <BarChart data={analytics.signupsByDay}>
                     <defs>
                       <linearGradient id="colorSignups" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8b5cf6" />
-                        <stop offset="100%" stopColor="#6366f1" />
+                        <stop offset="0%" stopColor="#4b91f1" />
+                        <stop offset="100%" stopColor="#0b57d0" />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="_id" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+                    <XAxis dataKey="_id" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: 'var(--surface-dark-sidebar)', borderColor: 'var(--border-subtle)', borderRadius: '4px' }} cursor={{ fill: 'var(--surface-hover)' }} />
                     <Bar dataKey="count" fill="url(#colorSignups)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

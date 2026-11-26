@@ -79,9 +79,12 @@ test('rejects WhatsApp status webhook with an invalid signature', () => {
   }
 });
 
-test('accepts a correctly signed delivery status webhook', () => {
+test('accepts a correctly signed delivery status webhook', async () => {
   const previousSecret = process.env.META_APP_SECRET;
   const previousLog = console.log;
+  const servicePath = require.resolve('../services/passwordReset.service');
+  const previousServiceModule = require.cache[servicePath];
+  const receivedStatuses = [];
   process.env.META_APP_SECRET = 'test-app-secret';
   const rawBody = Buffer.from('{"entry":[{"changes":[]}]}');
   const signature = `sha256=${createHmac('sha256', process.env.META_APP_SECRET)
@@ -89,9 +92,20 @@ test('accepts a correctly signed delivery status webhook', () => {
     .digest('hex')}`;
   const response = createResponse();
   console.log = () => {};
+  require.cache[servicePath] = {
+    id: servicePath,
+    filename: servicePath,
+    loaded: true,
+    exports: {
+      updateWhatsAppDeliveryStatus: async (delivery) => {
+        receivedStatuses.push(delivery);
+        return true;
+      }
+    }
+  };
 
   try {
-    webhookController.receive({
+    await webhookController.receive({
       rawBody,
       body: {
         entry: [{
@@ -110,8 +124,17 @@ test('accepts a correctly signed delivery status webhook', () => {
     }, response);
 
     assert.equal(response.statusCode, 200);
+    assert.deepEqual(receivedStatuses, [{
+      status: 'delivered',
+      messageId: 'wamid.test'
+    }]);
   } finally {
     console.log = previousLog;
+    if (previousServiceModule) {
+      require.cache[servicePath] = previousServiceModule;
+    } else {
+      delete require.cache[servicePath];
+    }
     if (previousSecret === undefined) {
       delete process.env.META_APP_SECRET;
     } else {

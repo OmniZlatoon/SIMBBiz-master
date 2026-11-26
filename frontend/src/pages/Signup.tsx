@@ -2,12 +2,48 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Mail, Lock, User, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Zap, Mail, Lock, User, ArrowRight, Loader2, ShieldCheck, Sparkles, Phone } from '../components/MaterialIcon';
+import { signInWithGoogle, signUpWithEmailAndPassword } from '../utils/firebaseAuth';
+import { PageSkeleton } from '../components/PageSkeleton';
+
+const GoogleIcon = () => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" focusable="false">
+    <path d="M21.6 12.23c0-.7-.06-1.37-.18-2.02H12v3.82h5.39a4.61 4.61 0 0 1-2 3.03v2.52h3.24c1.9-1.75 2.97-4.33 2.97-7.35Z" fill="#4285F4" />
+    <path d="M12 22c2.7 0 4.96-.9 6.61-2.42l-3.24-2.52c-.9.6-2.05.96-3.37.96-2.6 0-4.8-1.75-5.59-4.12H.88v2.6A10 10 0 0 0 12 22Z" fill="#34A853" />
+    <path d="M6.41 19.9A6 6 0 0 1 6 16.8v-2.6H2.75A10 10 0 0 0 2 12c0-1.62.39-3.16 1.08-4.5H6.4v2.6a5.99 5.99 0 0 1 0 3.8v2.6Z" fill="#FBBC05" />
+    <path d="M12 3.98c1.47 0 2.8.51 3.84 1.51l2.86-2.86A9.9 9.9 0 0 0 12 1.8a10 10 0 0 0-9.12 5.7H6.4a6 6 0 0 1 5.6-3.52Z" fill="#EA4335" />
+  </svg>
+);
+
+type GoogleProfileData = {
+  name: string;
+  email: string;
+  recoveryEmail: string;
+  whatsappNumber: string;
+};
+
+const initialGoogleProfile: GoogleProfileData = {
+  name: '',
+  email: '',
+  recoveryEmail: '',
+  whatsappNumber: ''
+};
 
 export default function Signup() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    recoveryEmail: '',
+    whatsappNumber: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [googleProfile, setGoogleProfile] = useState<GoogleProfileData>(initialGoogleProfile);
+  const [firebaseIdToken, setFirebaseIdToken] = useState('');
+  const [showGoogleCompletion, setShowGoogleCompletion] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -17,152 +53,281 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const res = await api.post('/auth/register', formData);
+      const { firebaseIdToken } = await signUpWithEmailAndPassword({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
+      });
+
+      const res = await api.post('/auth/register', {
+        ...formData,
+        firebaseIdToken,
+        emailVerified: true,
+        recoveryEmailVerified: true,
+        confirmPassword: formData.confirmPassword
+      });
+
       if (res.success) {
-        await login({ ...res.data, token: res.token });
-        navigate('/create-store');
+        const stores = await login({ ...res.data, token: res.token, authProvider: 'local' });
+        navigate(stores.length > 0 ? '/dashboard' : '/create-store');
       }
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setGoogleLoading(true);
+
+    try {
+      const { firebaseIdToken: token, user } = await signInWithGoogle();
+      if (!user.email) {
+        throw new Error('Your Google account does not provide an email address.');
+      }
+      setFirebaseIdToken(token);
+      setGoogleProfile({
+        name: user.displayName || '',
+        email: user.email,
+        recoveryEmail: user.email,
+        whatsappNumber: ''
+      });
+      setShowGoogleCompletion(true);
+    } catch (err: any) {
+      setError(err.message || 'Google sign-up failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleComplete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const payload = {
+        firebaseIdToken,
+        name: googleProfile.name.trim(),
+        whatsappNumber: googleProfile.whatsappNumber.trim(),
+        recoveryEmail: googleProfile.recoveryEmail.trim()
+      };
+
+      const res = await api.post('/auth/google', payload);
+      if (res.success) {
+        localStorage.setItem('googleIdToken', firebaseIdToken);
+        const stores = await login({ ...res.data, token: res.token, authProvider: 'google' });
+        navigate(stores.length > 0 ? '/dashboard' : '/create-store');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Google sign-up failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleGoogleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGoogleProfile({ ...googleProfile, [e.target.name]: e.target.value });
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><PageSkeleton variant="form" /></div>;
+  }
+
   return (
-    <div className="min-h-screen bg-white flex font-sans w-full">
-      
-      {/* Left Side: Wallpaper & Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-900/90 via-slate-900/95 to-slate-900/90 z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=1600&auto=format&fit=crop&q=80" 
-          alt="E-commerce Success" 
-          className="absolute inset-0 w-full h-full object-cover opacity-60"
-        />
-        
-        <div className="relative z-20 w-full h-full flex flex-col justify-between p-16">
-          <Link to="/" className="flex items-center gap-3 w-max">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-teal-600 shadow-lg shadow-white/20">
-              <Zap size={24} className="fill-current" />
-            </div>
-            <span className="text-3xl font-extrabold tracking-tight text-white">SIMBBiz</span>
-          </Link>
-          
-          <div className="max-w-xl">
-            <h1 className="text-5xl font-extrabold text-white leading-tight mb-8">
-              Start selling to millions of customers globally.
-            </h1>
-            
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <CheckCircle2 size={28} className="text-teal-400 flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-1">Zero Platform Fees</h3>
-                  <p className="text-slate-300">Keep 100% of your revenue. We connect you directly to buyers via WhatsApp.</p>
-                </div>
+    <div className="min-h-screen w-full bg-slate-50">
+      <div className="grid min-h-screen w-full grid-cols-1 overflow-hidden bg-white lg:grid-cols-2">
+        <div className="relative hidden min-h-screen overflow-hidden bg-slate-900 lg:flex">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(11,87,208,0.2),transparent_35%),linear-gradient(135deg,_rgba(18,18,18,0.98),_rgba(33,33,33,0.9))]" />
+          <img src="https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=1600&auto=format&fit=crop&q=80" alt="Business growth" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+
+          <div className="relative z-10 flex w-full flex-col justify-between p-10 xl:p-12">
+            <Link to="/" className="inline-flex w-max items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-teal-600 shadow-lg shadow-white/20">
+                <Zap size={22} className="fill-current" />
               </div>
-              <div className="flex items-start gap-4">
-                <CheckCircle2 size={28} className="text-teal-400 flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-1">Multi-Store Management</h3>
-                  <p className="text-slate-300">Run your fashion, tech, and real estate businesses all from one single dashboard.</p>
-                </div>
+              <span className="text-2xl font-extrabold tracking-tight text-white">SIMBBiz</span>
+            </Link>
+
+            <div className="max-w-xl">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-300/40 bg-teal-400/10 px-3 py-1.5 text-sm font-medium text-teal-100">
+                <Sparkles size={14} /> Launch quickly, sell globally
               </div>
-              <div className="flex items-start gap-4">
-                <CheckCircle2 size={28} className="text-teal-400 flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-1">Advanced Analytics</h3>
-                  <p className="text-slate-300">Track your store views, clicks, and catalogue performance in real-time.</p>
+              <h1 className="text-4xl font-extrabold leading-tight text-white xl:text-5xl">
+                Create your storefront and start selling smarter.
+              </h1>
+              <div className="mt-8 space-y-5 text-slate-100">
+                <div className="flex items-start gap-3 rounded-[3px] border border-white/10 bg-white/5 p-4">
+                  <ShieldCheck size={22} className="mt-0.5 text-teal-300" />
+                  <div>
+                    <p className="font-semibold text-white">Zero platform fees</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">Keep more of your revenue and connect directly with buyers through WhatsApp and storefront tools.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-[3px] border border-white/10 bg-white/5 p-4">
+                  <ShieldCheck size={22} className="mt-0.5 text-teal-300" />
+                  <div>
+                    <p className="font-semibold text-white">Storefront + dashboard</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">Track growth, manage inventory, and take orders from a single system built for modern commerce.</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Right Side: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-slate-50">
-        <div className="w-full max-w-md">
-          <div className="mb-10 text-center lg:text-left">
-            <div className="lg:hidden flex justify-center mb-8">
-              <Link to="/" className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center text-slate-900 shadow-lg shadow-teal-500/20">
-                <Zap size={28} className="fill-current" />
-              </Link>
+        <div className="flex items-center justify-center bg-slate-50 px-4 py-8 sm:px-8 lg:px-12">
+          <div className="w-full max-w-xl">
+            <div className="mb-8 text-center lg:text-left">
+              <div className="mb-6 flex justify-center lg:hidden">
+                <Link to="/" className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-slate-900 text-white shadow-sm">
+                  <Zap size={22} className="fill-current" />
+                </Link>
+              </div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-600">Create account</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Set up your store</h2>
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Create your account</h2>
-            <p className="text-slate-500">Join thousands of successful sellers on SIMBBiz.</p>
+
+            <div className="rounded-[3px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.02)] sm:p-7">
+              {error && (
+                <div className="mb-5 rounded-[3px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+              )}
+
+              {showGoogleCompletion ? (
+                <form className="space-y-5" onSubmit={handleGoogleComplete}>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">Complete your account</h3>
+                      <p className="text-sm text-slate-500">Add the remaining details required by the platform.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowGoogleCompletion(false)} className="text-sm font-medium text-slate-500 hover:text-slate-700">Back</button>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Full name</label>
+                    <div className="relative">
+                      <User size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input name="name" type="text" value={googleProfile.name} onChange={handleGoogleChange} required placeholder="John Doe" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Email address</label>
+                    <div className="relative">
+                      <Mail size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input name="email" type="email" value={googleProfile.email} readOnly aria-readonly="true" className="w-full cursor-not-allowed rounded-[3px] border border-slate-200 bg-slate-100 py-3 pl-11 pr-3 text-slate-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Recovery email</label>
+                    <div className="relative">
+                      <Mail size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input name="recoveryEmail" type="email" value={googleProfile.recoveryEmail} onChange={handleGoogleChange} required placeholder="recovery@example.com" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">WhatsApp number</label>
+                    <div className="relative">
+                      <Phone size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input name="whatsappNumber" type="tel" value={googleProfile.whatsappNumber} onChange={handleGoogleChange} required placeholder="+2348000000000" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[3px] bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-teal-500 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
+                    {loading ? <Loader2 size={17} className="animate-spin" /> : <>
+                      Finish sign up
+                      <ArrowRight size={17} />
+                    </>}
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <form className="space-y-5" onSubmit={handleSubmit}>
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Full name</label>
+                      <div className="relative">
+                        <User size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input name="name" type="text" value={formData.name} onChange={handleLocalChange} required placeholder="John Doe" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Email address</label>
+                      <div className="relative">
+                        <Mail size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input name="email" type="email" value={formData.email} onChange={handleLocalChange} required placeholder="you@example.com" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Recovery email</label>
+                      <div className="relative">
+                        <Mail size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input name="recoveryEmail" type="email" value={formData.recoveryEmail} onChange={handleLocalChange} required placeholder="recovery@example.com" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">WhatsApp number</label>
+                      <div className="relative">
+                        <Phone size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input name="whatsappNumber" type="tel" value={formData.whatsappNumber} onChange={handleLocalChange} required placeholder="+2348000000000" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Password</label>
+                      <div className="relative">
+                        <Lock size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input name="password" type="password" value={formData.password} onChange={handleLocalChange} required placeholder="••••••••" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">Confirm password</label>
+                      <div className="relative">
+                        <Lock size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleLocalChange} required placeholder="••••••••" className="w-full rounded-[3px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-3 text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20" />
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[3px] bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-teal-500 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
+                      {loading ? <Loader2 size={17} className="animate-spin" /> : <>
+                        Create account
+                        <ArrowRight size={17} />
+                      </>}
+                    </button>
+                  </form>
+
+                  <div className="my-5 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
+                    <span className="h-px flex-1 bg-slate-200" />
+                    <span>or</span>
+                    <span className="h-px flex-1 bg-slate-200" />
+                  </div>
+
+                  <button type="button" onClick={() => void handleGoogleSignUp()} disabled={googleLoading} className="flex w-full items-center justify-center gap-3 rounded-[3px] border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
+                    {googleLoading ? <Loader2 size={17} className="animate-spin" /> : <GoogleIcon />}
+                    <span>{googleLoading ? 'Please wait...' : 'Sign up with Google'}</span>
+                  </button>
+
+                  <div className="mt-6 text-center text-sm text-slate-600">
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-semibold text-teal-600 transition hover:text-teal-500">Sign in here</Link>
+                  </div>
+
+                
+                </>
+              )}
+            </div>
           </div>
-
-          <form className="space-y-6 bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-600 p-4 rounded-xl text-sm flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
-                {error}
-              </div>
-            )}
-            
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User size={18} className="text-slate-400" />
-                </div>
-                <input 
-                  name="name" type="text" required value={formData.name} onChange={handleChange}
-                  className="appearance-none block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl shadow-sm placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors sm:text-sm font-medium"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Email address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail size={18} className="text-slate-400" />
-                </div>
-                <input 
-                  name="email" type="email" required value={formData.email} onChange={handleChange}
-                  className="appearance-none block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl shadow-sm placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors sm:text-sm font-medium"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock size={18} className="text-slate-400" />
-                </div>
-                <input 
-                  name="password" type="password" required value={formData.password} onChange={handleChange}
-                  className="appearance-none block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl shadow-sm placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors sm:text-sm font-medium"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <button type="submit" disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-slate-900 hover:bg-teal-500 hover:text-slate-900 hover:shadow-teal-500/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-            >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : 'Create Account'}
-              {!loading && <ArrowRight size={18} />}
-            </button>
-            
-            <p className="text-xs text-slate-500 text-center mt-4">
-              By creating an account, you agree to our <a href="#" className="underline hover:text-slate-800">Terms of Service</a> and <a href="#" className="underline hover:text-slate-800">Privacy Policy</a>.
-            </p>
-          </form>
-
-          <p className="mt-8 text-center text-sm text-slate-500 font-medium">
-            Already have a seller account? <Link to="/login" className="font-bold text-teal-600 hover:text-teal-500 hover:underline transition-colors">Sign in here</Link>
-          </p>
         </div>
       </div>
     </div>

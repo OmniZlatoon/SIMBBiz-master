@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../utils/api';
-import { Search, MapPin, Menu, ShoppingBag, Package, Users, Star, Copy, Share2, MessageCircle } from 'lucide-react';
+import { Search, MapPin, Menu, ShoppingBag, Package, Users, Star, Copy, Share2, MessageCircle } from '../components/MaterialIcon';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function Storefront() {
   const { slug } = useParams();
@@ -38,7 +39,7 @@ export default function Storefront() {
     window.open(`https://wa.me/${shopData.business.phone.replace(/\D/g, '')}?text=${text}`, '_blank');
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500">Loading shop...</div>;
+  if (loading) return <div className="mx-auto min-h-screen max-w-md p-5"><PageSkeleton variant="list" /></div>;
   if (!shopData) return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-rose-500">Shop not found.</div>;
 
   const { business, categories, uncategorised } = shopData;

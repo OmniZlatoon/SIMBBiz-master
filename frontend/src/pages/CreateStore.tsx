@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Store, MapPin, Phone } from 'lucide-react';
+import { Store, MapPin, Phone } from '../components/MaterialIcon';
 
 export default function CreateStore() {
   const [formData, setFormData] = useState({ name: '', location: '', phone: '', category: '', description: '' });

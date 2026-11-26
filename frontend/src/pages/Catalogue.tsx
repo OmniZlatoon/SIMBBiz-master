@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL, api, getAuthHeaders } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Search, Edit2, Trash2, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, ImageIcon } from '../components/MaterialIcon';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function Catalogue() {
   const [products, setProducts] = useState<any[]>([]);
@@ -143,7 +144,7 @@ export default function Catalogue() {
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 transition-colors">
               {loading ? (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">Loading catalogue...</td></tr>
+                <tr><td colSpan={4} className="p-5"><PageSkeleton variant="list" /></td></tr>
               ) : filteredProducts.length === 0 ? (
                 <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">No products found. Add your first product to get started!</td></tr>
               ) : (

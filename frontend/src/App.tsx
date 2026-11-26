@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
+import { PageSkeleton } from './components/PageSkeleton';
 
 // Pages
 import Home from './pages/Home';
@@ -21,10 +22,14 @@ import Billing from './pages/Billing';
 import ForgotPassword from './pages/ForgotPassword';
 
 // Protected Route Wrapper
+function LoadingScreen() {
+  return <div className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><PageSkeleton /></div>;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, activeStore } = useAuth();
   
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Loading...</div>;
+  if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" />;
   if (!activeStore) return <Navigate to="/create-store" />;
   
@@ -34,7 +39,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Just requires User, not Store
 function UserRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Loading...</div>;
+  if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" />;
   return <>{children}</>;
 }
@@ -42,7 +47,7 @@ function UserRoute({ children }: { children: React.ReactNode }) {
 // Requires Admin Role
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Loading...</div>;
+  if (loading) return <LoadingScreen />;
   if (!user || user.role !== 'admin') return <Navigate to="/dashboard" />;
   return <>{children}</>;
 }

@@ -28,7 +28,8 @@ exports.validateAccount = async (req, res) => {
   }
 
   try {
-    const { recoveryToken, email: accountEmail } = await startRecovery({ email, recoveryEmail });
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const { recoveryToken, email: accountEmail } = await startRecovery({ email, recoveryEmail, ipAddress });
     return res.status(200).json({
       success: true,
       message: 'Account verified. Choose an OTP delivery method.',

@@ -8,7 +8,7 @@ const {
   normalizeEmail,
   keysFor,
   requestHasValidEmailFields
-} = require('../OTP/PasswordReset/passwordReset.utils');
+} = require('../utils/passwordReset.utils');
 const {
   formatWhatsAppOtpMessage,
   getWhatsAppBusinessNumber,
@@ -48,7 +48,7 @@ test('normalizes international WhatsApp numbers and rejects incomplete local num
 });
 
 test('accepts only the exact WhatsApp recovery handoff command', () => {
-  const { parseWhatsAppHandoffCode } = require('../OTP/PasswordReset/passwordReset.utils');
+  const { parseWhatsAppHandoffCode } = require('../utils/passwordReset.utils');
   assert.equal(parseWhatsAppHandoffCode('SIMBBIZ RESET ABCDEF1234567890ABCDEF12'), 'abcdef1234567890abcdef12');
   assert.equal(parseWhatsAppHandoffCode('hello SIMBBIZ RESET ABCDEF1234567890ABCDEF12'), null);
   assert.equal(parseWhatsAppHandoffCode('SIMBBIZ RESET ABCDEF1234'), null);

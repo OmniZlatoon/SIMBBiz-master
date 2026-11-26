@@ -245,13 +245,15 @@ exports.login = async (req, res) => {
 // app JWT that the rest of the backend will use for authorization.
 exports.googleLogin = async (req, res) => {
   try {
-    const { googleidToken } = req.body;
+    // `firebaseIdToken` is minted by Firebase Web Auth after Google sign-in.
+    // Retain the legacy field as a temporary compatibility fallback.
+    const firebaseIdToken = req.body.firebaseIdToken || req.body.googleidToken;
 
-    if (!googleidToken) {
+    if (!firebaseIdToken) {
       return res.status(400).json({ success: false, error: 'Firebase ID token is required' });
     }
 
-    const decodedToken = await admin.auth().verifyIdToken(googleidToken);
+    const decodedToken = await auth.verifyIdToken(firebaseIdToken);
     const email = normalizeEmail(decodedToken.email|| '');
 
     if (!email) {
@@ -265,14 +267,36 @@ exports.googleLogin = async (req, res) => {
       ]
     });
 
-    // Create user document if user not found in the DB
     if (!user) {
+      const name = String(req.body.name || decodedToken.name || '').trim();
+      const recoveryEmail = normalizeEmail(req.body.recoveryEmail || email);
+      const whatsappNumber = String(req.body.whatsappNumber || '').trim();
+
+      if (!name || !recoveryEmail || !whatsappNumber) {
+        return res.status(422).json({
+          success: false,
+          code: 'GOOGLE_PROFILE_REQUIRED',
+          error: 'Complete your name, recovery email, and WhatsApp number to create a Google account'
+        });
+      }
+
+      // A second recovery address needs its own verification flow. Until that
+      // exists, use the Firebase-verified Google address as the recovery email.
+      if (recoveryEmail !== email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Use your verified Google email as the recovery email until separate recovery-email verification is available'
+        });
+      }
+
       user = new User({
-        name: decodedToken.name || 'Google User',
+        name,
         email,
-        recoveryEmail: email,
-        whatsappNumber: '+0000000000',
+        recoveryEmail,
+        whatsappNumber,
         authProvider: 'google',
+        subscribed: false,
+        subscribed_plan: 'trial',
         firebaseUid: decodedToken.uid,
         emailVerified: Boolean(decodedToken.email_verified),
         recoveryEmailVerified: Boolean(decodedToken.email_verified),
@@ -284,6 +308,14 @@ exports.googleLogin = async (req, res) => {
 
       await user.save();
     } else {
+      // Do not silently convert a password account into a Google account.
+      if (user.authProvider !== 'google' && user.firebaseUid !== decodedToken.uid) {
+        return res.status(409).json({
+          success: false,
+          error: 'An account already exists for this email. Sign in with its existing method.'
+        });
+      }
+
       user.authProvider = 'google';
       user.firebaseUid = decodedToken.uid;
       user.emailVerified = Boolean(decodedToken.email_verified);

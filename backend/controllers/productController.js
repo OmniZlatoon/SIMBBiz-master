@@ -133,9 +133,36 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
-    res.json({ success: true, data: product });
+    const business = await Business.findOne({ _id: product.business_id, owner_id: req.user._id });
+    if (!business) return res.status(403).json({ success: false, error: 'User does not own this product' });
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({ success: false, error: 'Invalid product data' });
+    }
+
+    const editableFields = [
+      'category_id',
+      'name',
+      'description',
+      'price',
+      'image_url',
+      'in_stock',
+      'stock_qty',
+      'discount',
+      'min_qty',
+      'max_qty'
+    ];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([field]) => editableFields.includes(field))
+    );
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'No editable product fields were provided' });
+    }
+
+    Object.assign(product, updates);
+    await product.save();
+    return res.json({ success: true, data: product });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

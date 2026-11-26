@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const User = require('../models/User');
 
+// Middleware to handle user authentication
 const protect = async (req, res, next) => {
   try {
     let token;
@@ -34,6 +35,7 @@ const protect = async (req, res, next) => {
 
 const Business = require('../models/Business');
 
+// Middleware to authorize business owners
 const authorizeBusinessOwner = async (req, res, next) => {
   try {
     // Determine where the business ID is coming from (URL params 'id' or body 'business_id')
@@ -42,6 +44,7 @@ const authorizeBusinessOwner = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Business ID is required' });
     }
 
+    //Verify that the user is the owner of the business
     const business = await Business.findOne({ _id: businessId, owner_id: req.user._id });
     if (!business) {
       return res.status(403).json({ success: false, error: 'User does not own this business' });

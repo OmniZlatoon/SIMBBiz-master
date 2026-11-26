@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { protect, authorizeBusinessOwner } = require('../middleware/auth');
+const {verifyToken}= require('../googleSignin/Middleware/Validate.googlesignin');
 const authController = require('../controllers/authController');
 const businessController = require('../controllers/businessController');
 const categoryController = require('../controllers/categoryController');
@@ -21,7 +22,7 @@ const whatsappWebhookController = require('../controllers/whatsappWebhook.contro
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
 router.post('/auth/google', authController.googleLogin);
-router.post('/auth/google/logout', protect, authController.googleLogout);
+router.post('/auth/google/logout', verifyToken, authController.googleLogout);
 router.get('/auth/logout', authController.logout);
 router.get('/auth/me', protect, authController.getMe);
 router.post('/auth/forget-password', passwordResetController.validateAccount);
@@ -30,6 +31,8 @@ router.post('/auth/forget-password/whatsapp', passwordResetController.sendWhatsA
 router.post('/auth/forget-password/whatsapp/status', passwordResetController.getWhatsAppOtpStatus);
 router.post('/auth/forget-password/verify-otp', passwordResetController.verifyOtp);
 router.post('/auth/reset-password', passwordResetController.resetPassword);
+
+// WHATSAPP WEBHOOKS TO RECEIVE AND VERIFY HANDSHAKES FOR RESET PASSWORD
 router.get('/webhooks/whatsapp', whatsappWebhookController.verify);
 router.post('/webhooks/whatsapp', whatsappWebhookController.receive);
 

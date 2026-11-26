@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, KeyRound, Loader2, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, KeyRound, Loader2, Mail, MessageCircle, ShieldCheck } from '../components/MaterialIcon';
 import { api } from '../utils/api';
 
 type Stage = 'identify' | 'method' | 'waiting' | 'otp' | 'reset' | 'done';
@@ -207,7 +207,7 @@ export default function ForgotPassword() {
                 <MessageCircle size={18} /> Open WhatsApp and send message
               </a>
               <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                <Loader2 size={16} className="animate-spin" /> Waiting for your message…
+                <Loader2 size={16} className="animate-spin" /> Waiting for your message...
               </div>
               <p className="text-center text-xs leading-5 text-slate-400">
                 After tapping Send in WhatsApp, return here. This page will detect your message and request the OTP automatically.

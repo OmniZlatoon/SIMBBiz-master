@@ -1,5 +1,5 @@
 const { createHmac, timingSafeEqual } = require('node:crypto');
-const { parseWhatsAppHandoffCode } = require('../OTP/PasswordReset/passwordReset.utils');
+const { parseWhatsAppHandoffCode } = require('../utils/passwordReset.utils');
 
 const safeEqual = (left, right) => {
   const leftBuffer = Buffer.from(left);
@@ -61,10 +61,16 @@ exports.receive = async (req, res) => {
       for (const change of Array.isArray(entry.changes) ? entry.changes : []) {
         for (const status of Array.isArray(change.value?.statuses) ? change.value.statuses : []) {
           const messageId = status.id || 'unknown message';
+          const deliveryStatus = status.status;
           const recipient = maskRecipient(status.recipient_id);
           const errors = (status.errors || [])
             .map((error) => `${error.code || 'unknown'}: ${error.title || error.message || 'delivery failed'}`)
             .join('; ');
+
+          const { updateWhatsAppDeliveryStatus } = require('../services/passwordReset.service');
+          if (messageId !== 'unknown message') {
+            await updateWhatsAppDeliveryStatus({ status: deliveryStatus, messageId });
+          }
 
           if (status.status === 'failed') {
             console.error(

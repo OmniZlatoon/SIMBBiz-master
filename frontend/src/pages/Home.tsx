@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Store, Menu, TrendingUp, Tag, ChevronRight, Zap, Moon, Sun, Smartphone, ShoppingBag } from 'lucide-react';
+import { Search, MapPin, Store, Menu, TrendingUp, Tag, ChevronRight, Zap, Moon, Sun, Smartphone, ShoppingBag } from '../components/MaterialIcon';
 import { api } from '../utils/api';
 import { useTheme } from '../context/ThemeContext';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 export default function Home() {
   const [data, setData] = useState<any>({ randomProducts: [], latestProducts: [], topStores: [], promoProducts: [], techProducts: [], fashionProducts: [] });
@@ -166,10 +167,7 @@ export default function Home() {
         <div className="flex-1 flex flex-col gap-10 min-w-0 w-full overflow-hidden">
           
           {loading ? (
-            <div className="h-96 flex flex-col items-center justify-center text-slate-400">
-              <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-lg">Loading massive catalog...</p>
-            </div>
+            <PageSkeleton variant="list" />
           ) : (
             <>
               {/* Hero Promotional Banner (Carousel) */}
